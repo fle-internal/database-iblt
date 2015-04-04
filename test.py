@@ -28,10 +28,10 @@ assert set( pairs ) == union
 #Test if 2 arrays can successfully be subtracted 
 t1 = IBLT( 10, 4, 10, 10)
 t2 = IBLT( 10, 4, 10, 10)
-pairs1 = [( "key%d" % i, "value%d" % i ) for i in range(10 )]
+pairs1 = [( "key%d" % i, "value%d" % i ) for i in range(1,10 )]
 for key, value in pairs1:
 	t1.insert( key, value )
-pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(7)]
+pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(4,12)]
 for key, value in pairs2:
         t2.insert( key, value )
 arr3= t1.subtract(t1.T,t2.T)
