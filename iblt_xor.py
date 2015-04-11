@@ -1,6 +1,10 @@
 import hashlib, math, struct
 import sys 
+import cProfile
+import re
 from copy import deepcopy
+from time import time 
+
 
 class IBLT:
 	# m is amount of cells in underlying lookup table
@@ -56,11 +60,22 @@ class IBLT:
 		"""
 		Insert the key/value pair into the IBLT.
 		No return value.
+		cProfile.run('__insert')
 		"""
 		return self.__insert( self.T, key, value )
 
 	def __insert( self, T, key, value ):
+
+		hash_time_start = time()
 		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
+		hash_time_end = time()
+
+		file_hash = open("hash.txt","a")
+		file_hash.write(str(hash_time_end - hash_time_start))
+		file_hash.write("\n")
+		file_hash.close()
+
+		inserting_start = time()
 		#print indices;
 		for index in indices:
 			# Increase count
@@ -71,6 +86,15 @@ class IBLT:
 			T[index][2] = self.__sum_int_arrays( T[index][2], self.__value_to_int_array( value, self.value_size ) )
 			# Add key hash to hashkeySum
 			T[index][3] = self.__sum_int_arrays( T[index][3], self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ) )
+
+		inserting_end = time()
+
+
+	 	file_insert = open("insert.txt","a")
+                file_insert.write(str(inserting_end - inserting_start))
+                file_insert.write("\n")
+                file_insert.close()
+	
 
 	def delete( self, key, value ):
 		"""
