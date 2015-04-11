@@ -2,6 +2,8 @@ import math
 from iblt_xor import IBLT
 #from iblt import IBLT
 from time import time
+import cProfile
+import hashlib
 
 def make_iblt(len1, len2):
 	size_iblt = abs(len1-len2)*1.4
@@ -28,12 +30,16 @@ def make_iblt(len1, len2):
 
 	pairs1 = [( "key%d" % i, "value%d" % i ) for i in range(len1)]
 	for key, value in pairs1:
-        	t1.insert( key, value )
+    		key = hashlib.md5(key).hexdigest()
+		value = hashlib.sha1(value).hexdigest() 
+	   	t1.insert( key, value )
 
 	start = time()
 	insertion_time_start = time()
 	pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(len2)]
 	for key, value in pairs2:
+		key = hashlib.md5(key).hexdigest()
+                value = hashlib.sha1(value).hexdigest()
         	t2.insert( key, value )
 	insertion_time_end = time()
 	print "Insertion time"
@@ -66,12 +72,16 @@ def full_db(len1, len2):
 
 	pairs1 = [( "key%d" % i, "value%d" % i ) for i in range(len1 )]
 	for key, value in pairs1:
-        	dict_a.update({key: value })
+                key = hashlib.md5(key).hexdigest()
+                value = hashlib.sha1(value).hexdigest()
+	     	dict_a.update({key: value })
 
 	start = time()
 	dict_b = {}
 	pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(len2)]
 	for key, value in pairs2:
+		key = hashlib.md5(key).hexdigest()
+                value = hashlib.sha1(value).hexdigest()
         	dict_b.update({key: value })
 
 	dict_a_minus_b = {}
@@ -103,7 +113,8 @@ for db1 in range(1, 10, 1):
 file.close()
 """
 file_compare = open("compare.txt","w")
-file_compare.write(str(full_db(100000,100000)))
+file_compare.write(str(full_db(10000,10000)))
 file_compare.write("\n")
-file_compare.write(str(make_iblt(100000,100000)))
+file_compare.write(str(make_iblt(10000,10000)))
+#file_compare.write(str(cProfile.run('make_iblt(10000,10000)')))
 file_compare.close()

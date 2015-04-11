@@ -1,6 +1,5 @@
 import hashlib, math, struct
 import sys 
-import cProfile
 import re
 from copy import deepcopy
 from time import time 
@@ -11,12 +10,14 @@ class IBLT:
 	m = None
 	# k is amount of hash functions
 	k = None
+ 	"""	
 	# key_size is maximum size for keys
 	key_size = None
 	# value_size is maximum size for values
 	value_size = None
 	# hash_key_sum_size is amount of bytes used for the hashkeySum field
 	hash_key_sum_size = None
+	"""
 	# hash is function( i, value ), where i is index of hash function
 	# and value is value to be hashed
 	hash = None
@@ -43,24 +44,31 @@ class IBLT:
 		"""
 		self.m = m
 		self.k = k
+		"""	
 		self.key_size = key_size
 		self.value_size = value_size
 		self.hash_key_sum_size = hash_key_sum_size
+		"""
 		self.hash = hash if hash is not None else self.__hash
-		self.T = [[0,[0 for j in range( key_size )],[0 for j in range( value_size )],[0 for j in range( hash_key_sum_size )]] for i in range( m )]
+
+#self.T = [[0,[0 for j in range( key_size )],[0 for j in range( value_size )],[0 for j in range( hash_key_sum_size )]] for i in range( m )]
+		self.T = [[0,0,0,0] for i in range( m )]
                 #print("len");
                 #print(len(self.T));
                 #print(self.T); 
                 #print(sys.getsizeof(self.T));
 		#print("\n");
+		"""
 		self.empty_key_array = [0 for i in range( self.key_size )]
 		self.empty_hash_sum_array = [0 for i in range( self.hash_key_sum_size )]
+		"""	
+       		self.empty_key_array = 0 
+		self.empty_hash_sum_array = 0 
 
 	def insert( self, key, value ):
 		"""
 		Insert the key/value pair into the IBLT.
 		No return value.
-		cProfile.run('__insert')
 		"""
 		return self.__insert( self.T, key, value )
 
@@ -80,12 +88,21 @@ class IBLT:
 		for index in indices:
 			# Increase count
 			T[index][0] += 1
+			"""	
 			# Add key to keySum
 			T[index][1] = self.__sum_int_arrays( T[index][1], self.__value_to_int_array( key, self.key_size ) )
 			# Add value to valueSum
 			T[index][2] = self.__sum_int_arrays( T[index][2], self.__value_to_int_array( value, self.value_size ) )
 			# Add key hash to hashkeySum
 			T[index][3] = self.__sum_int_arrays( T[index][3], self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ) )
+			"""
+			# Add key to keySum
+                        T[index][1] = T[index][1]^int(key, 16)
+                        # Add value to valueSum
+                        T[index][2] = T[index][2]^int(value, 16)
+                        # Add key hash to hashkeySum
+			hashed_key = hashlib.md5(key).hexdigest()
+			T[index][3] =  T[index][3]^int(hashed_key, 16)
 
 		inserting_end = time()
 
