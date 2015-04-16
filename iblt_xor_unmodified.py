@@ -60,7 +60,7 @@ class IBLT:
 		"""
 		Insert the key/value pair into the IBLT.
 		No return value.
-		cProfile.run('__insert')
+		#cProfile.run('__insert')
 		"""
 		return self.__insert( self.T, key, value )
 
