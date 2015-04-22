@@ -53,17 +53,8 @@ class IBLT:
 		
 	def insert( self, T, key, value ):
 
-		hash_time_start = time()
 		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-		hash_time_end = time()
 
-		file_hash = open("hash.txt","a")
-		file_hash.write(str(hash_time_end - hash_time_start))
-		file_hash.write("\n")
-		file_hash.close()
-
-		inserting_start = time()
-		#print indices;
 		for index in indices:
 			# Increase count
 			T[index][0] += 1
@@ -74,14 +65,6 @@ class IBLT:
                         # Add key hash to hashkeySum
 			hashed_key = hashlib.md5(key).hexdigest()
 			T[index][3] =  T[index][3]^int(hashed_key, 16)
-
-		inserting_end = time()
-
-
-	 	file_insert = open("insert.txt","a")
-                file_insert.write(str(inserting_end - inserting_start))
-                file_insert.write("\n")
-                file_insert.close()
 
 
 	def delete( self, T, key, value ):
@@ -116,20 +99,14 @@ class IBLT:
 		"""
 		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
 		for index in indices:
-			if self.T[index][0] == 0 and \
-					self.T[index][1] == self.empty_key_array and \
-					self.T[index][3] == self.empty_hash_sum_array:
+			if self.T[index][0] == 0 and self.T[index][1] == 0 and self.T[index][3] == 0:  
 				return ( IBLT.RESULT_GET_NO_MATCH, None )
-			elif self.T[index][0] == 1 and \
-					self.T[index][1] == self.__value_to_int_array( key, self.key_size ) and \
-					self.T[index][3] == self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ):
-				return ( IBLT.RESULT_GET_MATCH, self.__int_array_to_value( self.T[index][2] ) )
-			elif self.T[index][0] == -1 and \
-					self.T[index][1] == self.__value_to_int_array( self.__value_to_int_array( key, self.key_size ) )and \
-                			self.T[index][3] == self.__value_to_int_array( self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ) ):
-
-		#	return ( IBLT.RESULT_GET_DELETED_MATCH, self.__int_array_to_value( self.__negate_int_array( self.T[index][2] ) ) )
-				return ( IBLT.RESULT_GET_DELETED_MATCH, self.__int_array_to_value( self.T[index][2] ) )
+			elif self.T[index][0] == 1 and self.T[index][1] == key and \
+					self.T[index][3] == hashlib.md5(key).hexdigest():
+				return ( IBLT.RESULT_GET_MATCH, self.T[index][2] )
+			elif self.T[index][0] == -1 and self.T[index][1] == key and \
+                			self.T[index][3] == hashlib.md5(key).hexdigest(): 
+				return ( IBLT.RESULT_GET_DELETED_MATCH, self.T[index][2] )
 		return ( IBLT.RESULT_GET_INCONCLUSIVE, None )
 
 	def list_entries( self ):
@@ -151,9 +128,6 @@ class IBLT:
 					check = 1	
 					if entry[0] == 1 and entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16) :
 						entries.append((hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
-						#print "inside the list_entries" 
-						#print hex(entry[1])[2:-1].zfill(32)
-						#print hex(entry[2])[2:-1].zfill(32)	
 						self.delete(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
 					elif entry[0] == -1 and entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
@@ -247,26 +221,7 @@ class IBLT:
 		result += self.m * ( 4 + self.key_size + self.value_size + self.hash_key_sum_size )
 		return result
 
-	def dump( self ):
-		IBLT.__dump( self.T )
 
-	@staticmethod
-	def __dump( T ):
-		print "DUMP START::::::::::::::::::::::"
-		print "Count sum: %d" % sum( map( lambda e: e[0], T ) )
-		print "Non-empty count: %d" % len( filter( lambda e: e[0] > 0, T ) )
-		print "Below-zero sum: %d" % sum( map( lambda e: e[0], filter( lambda e: e[0] < 0, T ) ) )
-		print "Below-zero count: %d" % len( filter( lambda e: e[0] < 0, T ) )
-		for i in range( len( T ) ):
-			e = T[i]
-#			if e[0] > 0:
-			print "%d: %s" % ( i, e )
-		print "DUMP END::::::::::::::::::::::::"
-
-	@staticmethod
-	def get_key_hash( key ):
-		return hashlib.sha512( key ).digest()
-	
 	# Assuming there are no more than 4 hash functions, according to the paper
 	def __hash(self, i, value) :
 		if i == 0 :
@@ -278,61 +233,3 @@ class IBLT:
 		else :
 			return int(value[24:32], 16)%self.m
 
-	"""
-	hash_hex_length = None
-	def __hash( self, i, value ):
-		if self.hash_hex_length == None:
-			# Find the shortest length to extract from the hash,
-			# get the bit length of m and divide by four to get hex length
-			self.hash_hex_length = int( math.ceil( math.log( self.m, 2 ) / 4.0 ) )
-		if not 0 <= i < self.k:
-			raise Exception( 'Hash i must be between 0 and %d (%d)' % ( self.k, i ) )
-		return int( hashlib.sha512( str( i ) + value ).hexdigest()[:self.hash_hex_length], 16 ) % self.m
-	"""
-
-	def __sum_int_arrays( self, arr1, arr2 ):
-		assert len( arr1 ) == len( arr2 )
-		result = [0 for i in range( len( arr1 ) ) ]
-		for i in range( len( arr1 ) ):
-			result[i] = ( arr1[i] ^ arr2[i] ) % 256
-		return result
-
-	def __diff_int_arrays( self, arr1, arr2 ):
-		assert len( arr1 ) == len( arr2 )
-		result = [0 for i in range( len( arr1 ) ) ]
-		for i in range( len( arr1 ) ):
-			result[i] = ( arr1[i] ^ arr2[i] ) % 256
-		return result
-
-	def __value_to_int_array( self, value, length ):
-		return [ord(value[i]) if i < len( value ) else 0 for i in range( length )]
-
-	def __int_array_to_value( self, arr ):
-		val = "".join( [ chr(i) for i in arr ] )
-		# Cut zero bytes from the right, since they are 
-		# not part of the actual value
-		return val.rstrip( '\x00' ) 
-
-	def __negate_int_array( self, arr ):
-		return map( lambda i: (256-i) % 256, arr )
-
-	def __eq__( self, other ):
-		# Check if correct class
-		if not isinstance( other, IBLT ):
-			return False
-
-		# Check if variables match
-		if not all( ( ( self.m == other.m ),
-					  ( self.k == other.k ),
-				      ( self.key_size == other.key_size ),
-				 	  ( self.value_size == other.value_size ),
-					  ( self.hash_key_sum_size == other.hash_key_sum_size ),
-					  ( len( self.T ) == len( other.T ) ) ) ):
-			return False
-
-		# Check if actual data match
-		for i in xrange( self.m ):
-			c1, c2 = self.T[i], other.T[i]
-			if c1 != c2:
-				return False
-		return True
