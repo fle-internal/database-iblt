@@ -126,14 +126,20 @@ class IBLT:
 				entry = T[i]
 				if entry[0] == 1 or entry[0] == -1:
 					check = 1	
-					if entry[0] == 1 and entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16) :
-						entries.append((hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
-						self.delete(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
+					if entry[0] == 1 : 
+						if entry[3] != int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16) :
+							raise NameError('The hashed key does not match the hash(key)')
+						else :
+							entries.append((hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
+							self.delete(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
-					elif entry[0] == -1 and entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
-                                                entries.append((str(entry[1]), str(entry[2])))
-                                   		entry[0] = 1; 
-			       	                self.delete(T, str(entry[1]), str(entry[2]))
+					elif entry[0] == -1 :
+						if entry[3] != int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
+							raise NameError('The hashed key does not match the hash(key)')
+						else :
+							entries.append((str(entry[1]), str(entry[2])))
+                                   			entry[0] = 1; 
+			       	                	self.delete(T, str(entry[1]), str(entry[2]))
 
 		if any( filter( lambda e: e[0] != 0, T ) ):
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )

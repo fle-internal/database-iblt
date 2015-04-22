@@ -101,9 +101,8 @@ for db1 in range(1, 10, 1):
 	file.write("\n")
 file.close()
 """
-file_compare = open("compare_unmodified.txt","w")
-file_compare.write(str(full_db(10000,10000)))
+file_compare = open("compare_unmodified.txt","a")
+file_compare.write(str(make_iblt(10000,10000)/full_db(10000,10000)))
 file_compare.write("\n")
-file_compare.write(str(make_iblt(10000,10000)))
 #file_compare.write(str(cProfile.run('make_iblt(10000,10000)')))
 file_compare.close()

@@ -9,13 +9,13 @@ start = time()
 t1 = IBLT(10, 4, 10, 10)
 t2 = IBLT(10, 4, 10, 10)
 
-pairs = [( "key%d" % i, "value%d" % i ) for i in range(100000)]
+pairs = [( "key%d" % i, "value%d" % i ) for i in range(10000)]
 for key, value in pairs:
 	key = hashlib.md5(key).hexdigest()
         value = hashlib.sha1(value).hexdigest()
        	t1.insert( key, value )
 
-pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(99999)]
+pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(10000)]
 for key, value in pairs:
 	key = hashlib.md5(key).hexdigest()
         value = hashlib.sha1(value).hexdigest()

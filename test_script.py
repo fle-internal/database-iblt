@@ -10,29 +10,21 @@ def make_iblt(len1, len2):
 	pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
 	start = time()
 	size_iblt = abs(len1-len2)*1.4
-	"""
 	# Check why this script fails in the hash function
 	if size_iblt == 0:
 		size_iblt =1
-		t1 = IBLT(int(math.ceil(size_iblt)), 1, 10, 10)
-		t2 = IBLT(int(math.ceil(size_iblt)), 1, 10, 10)
+		t1 = IBLT(int(math.ceil(size_iblt)), 1)
+		t2 = IBLT(int(math.ceil(size_iblt)), 1)
 	elif size_iblt < 4:
-		t1 = IBLT(int(math.ceil(size_iblt)), size_iblt, 10, 10)
-		t2 = IBLT(int(math.ceil(size_iblt)), size_iblt, 10, 10)
+		t1 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
+		t2 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
 	else :
 
-		t1 = IBLT(int(math.ceil(size_iblt)), 4, 10, 10)
-		t2 = IBLT(int(math.ceil(size_iblt)), 4, 10, 10)
-	"""
-	if size_iblt < 4 :
-		t1 = IBLT(4, 5) 
-		t2 = IBLT(4, 5)
-	else:
-		t1 = IBLT(int(math.ceil(size_iblt)), 5)
-		t2 = IBLT(int(math.ceil(size_iblt)), 5)
+		t1 = IBLT(int(math.ceil(size_iblt)), 4)
+		t2 = IBLT(int(math.ceil(size_iblt)), 4)
 
 	for key, value in pairs1:
-	   	't1.insert( t1.T, key, value )'
+	   	t1.insert( t1.T, key, value )
 
 	for key, value in pairs2:
         	t2.insert( t2.T, key, value )
@@ -93,10 +85,9 @@ for db1 in range(1, 10, 1):
 file.close()
 """
 
-file_compare = open("compare.txt","w")
-file_compare.write(str(full_db(10000,10000)))
+file_compare = open("compare.txt","a")
+file_compare.write(str(make_iblt(10000, 10000)/full_db(10000,10000)))
 file_compare.write("\n")
-file_compare.write(str(make_iblt(10000,10000)))
 #cProfile.run('make_iblt(10000,10000)')
 #print cProfile.run('full_db(10000, 10000)')
 file_compare.close()
