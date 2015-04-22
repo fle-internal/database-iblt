@@ -14,7 +14,7 @@ def hex_string_to_ascii (hex_string) :
 
 
 class IBLT:
-	# m is amount of cells in underlying lookup table
+	# m is amount of cells in underlying lookup tables
 	m = None
 	# k is amount of hash functions
 	k = None
