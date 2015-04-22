@@ -3,6 +3,14 @@ import sys
 import re
 from copy import deepcopy
 from time import time 
+import cProfile
+
+#Assuming that the string supplied has an even length
+def hex_string_to_ascii (hex_string) :
+	list_char = []
+	for i in range(0, len(hex_string),2) :
+		list_char.append(chr(hex_string[i:i+2]))	
+	return ''.join(list_char)
 
 
 class IBLT:
@@ -74,7 +82,7 @@ class IBLT:
                 file_insert.write(str(inserting_end - inserting_start))
                 file_insert.write("\n")
                 file_insert.close()
-	
+
 
 	def delete( self, T, key, value ):
 		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
@@ -258,7 +266,19 @@ class IBLT:
 	@staticmethod
 	def get_key_hash( key ):
 		return hashlib.sha512( key ).digest()
+	
+	# Assuming there are no more than 4 hash functions, according to the paper
+	def __hash(self, i, value) :
+		if i == 0 :
+			return int(value[0:8], 16)%self.m
+		elif i == 1 :
+			return int(value[8:16], 16)%self.m
+		elif i == 2 :
+			return int(value[16:24], 16)%self.m
+		else :
+			return int(value[24:32], 16)%self.m
 
+	"""
 	hash_hex_length = None
 	def __hash( self, i, value ):
 		if self.hash_hex_length == None:
@@ -268,6 +288,7 @@ class IBLT:
 		if not 0 <= i < self.k:
 			raise Exception( 'Hash i must be between 0 and %d (%d)' % ( self.k, i ) )
 		return int( hashlib.sha512( str( i ) + value ).hexdigest()[:self.hash_hex_length], 16 ) % self.m
+	"""
 
 	def __sum_int_arrays( self, arr1, arr2 ):
 		assert len( arr1 ) == len( arr2 )

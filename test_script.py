@@ -1,11 +1,14 @@
 import math
 from iblt_xor import IBLT
-#from iblt import IBLT
 from time import time
 import cProfile
 import hashlib
 
 def make_iblt(len1, len2):
+
+	pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
+	pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
+	start = time()
 	size_iblt = abs(len1-len2)*1.4
 	"""
 	# Check why this script fails in the hash function
@@ -22,39 +25,22 @@ def make_iblt(len1, len2):
 		t2 = IBLT(int(math.ceil(size_iblt)), 4, 10, 10)
 	"""
 	if size_iblt < 4 :
-		t1 = IBLT(4, 4, 10, 10)
-		t2 = IBLT(4, 4, 10, 10)
+		t1 = IBLT(4, 5) 
+		t2 = IBLT(4, 5)
 	else:
-		t1 = IBLT(int(math.ceil(size_iblt)), 4, 10, 10)
-		t2 = IBLT(int(math.ceil(size_iblt)), 4, 10, 10)
+		t1 = IBLT(int(math.ceil(size_iblt)), 5)
+		t2 = IBLT(int(math.ceil(size_iblt)), 5)
 
-	pairs1 = [( "key%d" % i, "value%d" % i ) for i in range(len1)]
 	for key, value in pairs1:
-    		key = hashlib.md5(key).hexdigest()
-		value = hashlib.sha1(value).hexdigest() 
-	   	t1.insert( key, value )
+	   	't1.insert( t1.T, key, value )'
 
-	start = time()
-	insertion_time_start = time()
-	pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(len2)]
 	for key, value in pairs2:
-		key = hashlib.md5(key).hexdigest()
-                value = hashlib.sha1(value).hexdigest()
-        	t2.insert( key, value )
-	insertion_time_end = time()
-	print "Insertion time"
-	print insertion_time_end - insertion_time_start
+        	t2.insert( t2.T, key, value )
 	
-	subtraction_time = time()
 	t1.subtract(t1.T,t2.T)
+	t1.list_entries()
 	end = time()
-		
-	print t1.list_entries()
-
-	print "Subtraction time"
-	print end-subtraction_time
-	print "Total time\n"
-	return end-start
+	return end - start
 
 # Returns the absolute value of the argument passed
 def abs(num):
@@ -68,20 +54,17 @@ def abs(num):
 # Assuming that the dbs given to us are not in the form of dictionaries, we create 2 dictionaries
 # insert values and then find out the difference between them 
 def full_db(len1, len2):
+
+	pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
+	pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
+	start = time()
 	dict_a = {}
 
-	pairs1 = [( "key%d" % i, "value%d" % i ) for i in range(len1 )]
 	for key, value in pairs1:
-                key = hashlib.md5(key).hexdigest()
-                value = hashlib.sha1(value).hexdigest()
 	     	dict_a.update({key: value })
 
-	start = time()
 	dict_b = {}
-	pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(len2)]
 	for key, value in pairs2:
-		key = hashlib.md5(key).hexdigest()
-                value = hashlib.sha1(value).hexdigest()
         	dict_b.update({key: value })
 
 	dict_a_minus_b = {}
@@ -94,9 +77,6 @@ def full_db(len1, len2):
 			dict_b_minus_a.update({key:dict_b[key]}) 
 	end = time()
 	return end-start
-	#print dict_a_minus_b
-	#print dict_b_minus_a	
-
 """
 file = open("heat.txt", "w")
 for db1 in range(1, 10, 1):
@@ -112,9 +92,11 @@ for db1 in range(1, 10, 1):
 	file.write("\n")
 file.close()
 """
+
 file_compare = open("compare.txt","w")
 file_compare.write(str(full_db(10000,10000)))
 file_compare.write("\n")
 file_compare.write(str(make_iblt(10000,10000)))
-#file_compare.write(str(cProfile.run('make_iblt(10000,10000)')))
+#cProfile.run('make_iblt(10000,10000)')
+#print cProfile.run('full_db(10000, 10000)')
 file_compare.close()
