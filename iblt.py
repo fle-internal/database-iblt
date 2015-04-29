@@ -1,18 +1,23 @@
 import hashlib, math, struct
 import sys 
+import re
 from copy import deepcopy
+from time import time 
+import cProfile
+
+#Assuming that the string supplied has an even length
+def hex_string_to_ascii (hex_string) :
+	list_char = []
+	for i in range(0, len(hex_string),2) :
+		list_char.append(chr(hex_string[i:i+2]))	
+	return ''.join(list_char)
+
 
 class IBLT:
-	# m is amount of cells in underlying lookup table
+	# m is amount of cells in underlying lookup tables
 	m = None
 	# k is amount of hash functions
 	k = None
-	# key_size is maximum size for keys
-	key_size = None
-	# value_size is maximum size for values
-	value_size = None
-	# hash_key_sum_size is amount of bytes used for the hashkeySum field
-	hash_key_sum_size = None
 	# hash is function( i, value ), where i is index of hash function
 	# and value is value to be hashed
 	hash = None
@@ -27,7 +32,7 @@ class IBLT:
 	RESULT_LIST_ENTRIES_COMPLETE = "complete"
 	RESULT_LIST_ENTRIES_INCOMPLETE = "incomplete"
 
-	def __init__( self, m, k, key_size, value_size, hash_key_sum_size=10, hash=None ):
+	def __init__( self, m, k,hash=None ):
 		"""
 		m is the amount of cells in underlying lookup table
 		k is the amount of hash functions
@@ -36,77 +41,32 @@ class IBLT:
 		hash_key_sum_size is amount of bytes used for the hashkeySum field
 		hash is function( i, value ), where i is index of hash function
 		    and value is value to be hashed (or None for default hash functions)
-		"""
-		self.m = m
+	 	"""	
+		self.m = m	
 		self.k = k
-		self.key_size = key_size
-		self.value_size = value_size
-		self.hash_key_sum_size = hash_key_sum_size
 		self.hash = hash if hash is not None else self.__hash
-		self.T = [[0,[0 for j in range( key_size )],[0 for j in range( value_size )],[0 for j in range( hash_key_sum_size )]] for i in range( m )]
-                #print("len");
-                #print(len(self.T));
-                #print(self.T); 
-                #print(sys.getsizeof(self.T));
-		#print("\n");
-		self.empty_key_array = [0 for i in range( self.key_size )]
-		self.empty_hash_sum_array = [0 for i in range( self.hash_key_sum_size )]
 
-	def insert( self, key, value ):
-		"""
-		Insert the key/value pair into the IBLT.
-		No return value.
-		"""
-		return self.__insert( self.T, key, value )
+		self.T = [[0,0,0] for i in range( m )]
+       		self.empty_key_array = 0 
+		self.empty_hash_sum_array = 0 
 
-	def __insert( self, T, key, value ):
+		
+	def insert( self, T, key, value ):
 		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-		#print indices;
 		for index in indices:
-			# Increase count
-			T[index][0] += 1
 			# Add key to keySum
-			T[index][1] = self.__sum_int_arrays( T[index][1], self.__value_to_int_array( key, self.key_size ) )
-			# Add value to valueSum
-			T[index][2] = self.__sum_int_arrays( T[index][2], self.__value_to_int_array( value, self.value_size ) )
-			# Add key hash to hashkeySum
-			T[index][3] = self.__sum_int_arrays( T[index][3], self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ) )
+	        	T[index][0] = T[index][0]^int(key, 16)
+                        # Add value to valueSum
+                        T[index][1] = T[index][1]^int(value, 16)
+                        # Add key hash to hashkeySum
+			hashed_key = hashlib.md5(key).hexdigest()
+			T[index][2] =  T[index][2]^int(hashed_key, 16)
 
-	def delete( self, key, value ):
-		"""
-		Delete a key/value pair from the IBLT.
-		No return value.
-		"""
-		return self.__delete( self.T, key, value )
-
-	def __delete( self, T, key, value ):
-		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-		key_array = self.__value_to_int_array( key, self.key_size )
-		value_array = self.__value_to_int_array( value, self.value_size )
-		for index in indices:
-			# Decrease count
-			T[index][0] -= 1
-			# Subtract key from keySum
-			T[index][1] = self.__diff_int_arrays( T[index][1], key_array )
-			# Subtract value from valueSum
-			T[index][2] = self.__diff_int_arrays( T[index][2], value_array )
-			# Subtract key hash from hashkeySum
-			T[index][3] = self.__diff_int_arrays( T[index][3], self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ) )
-
-
-        def subtract(self, arr1, arr2):
-        	"""
-		Subtract 2 arrays and list the elements .
-		Elements printed are A-B and B-A.
-		"""
-		return self.__subtract(self.T, arr1, arr2)
-
-	def __subtract (self, T, arr1, arr2):
+	def subtract (self, arr1, arr2):
 		for i in range(0, len(arr1)):
-			arr1[i][0] = arr1[i][0] - arr2[i][0]
-			arr1[i][1] = self.__diff_int_arrays( arr1[i][1], arr2[i][1])
-			arr1[i][2] = self.__diff_int_arrays( arr1[i][2], arr2[i][2])
-			arr1[i][3] = self.__diff_int_arrays( arr1[i][3], arr2[i][3])
+			arr1[i][0] = arr1[i][0] ^ arr2[i][0]	
+			arr1[i][1] = arr1[i][1] ^ arr2[i][1]
+			arr1[i][2] = arr1[i][2] ^ arr2[i][2]
 	        return arr1	
 
 	def get( self, key ):
@@ -115,23 +75,14 @@ class IBLT:
 		This function can return four different responses:
 		( IBLT.RESULT_GET_NO_MATCH, None ): The key was definitively not in the table
 		( IBLT.RESULT_GET_MATCH, <Value> ): The key was in the table and the value is returned
-		( IBLT.RESULT_GET_DELETED_MATCH, <Value> ): The key was deleted without being inserted
 		( IBLT.RESULT_GET_INCONCLUSIVE, None ): It couldn't be determined if the key was in the table or not
 		"""
 		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
 		for index in indices:
-			if self.T[index][0] == 0 and \
-					self.T[index][1] == self.empty_key_array and \
-					self.T[index][3] == self.empty_hash_sum_array:
+			if self.T[index][0] == 0 and self.T[index][2] == 0:  
 				return ( IBLT.RESULT_GET_NO_MATCH, None )
-			elif self.T[index][0] == 1 and \
-					self.T[index][1] == self.__value_to_int_array( key, self.key_size ) and \
-					self.T[index][3] == self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ):
-				return ( IBLT.RESULT_GET_MATCH, self.__int_array_to_value( self.T[index][2] ) )
-			elif self.T[index][0] == -1 and \
-					self.T[index][1] == self.__negate_int_array( self.__value_to_int_array( key, self.key_size ) )and \
-					self.T[index][3] == self.__negate_int_array( self.__value_to_int_array( IBLT.get_key_hash( key ), self.hash_key_sum_size ) ):
-				return ( IBLT.RESULT_GET_DELETED_MATCH, self.__int_array_to_value( self.__negate_int_array( self.T[index][2] ) ) )
+			elif self.T[index][0] == key and self.T[index][2] == hashlib.md5(key).hexdigest(): 
+				return ( IBLT.RESULT_GET_MATCH, self.T[index][1] )
 		return ( IBLT.RESULT_GET_INCONCLUSIVE, None )
 
 	def list_entries( self ):
@@ -144,30 +95,17 @@ class IBLT:
 		T = deepcopy( self.T )
 		entries = []
 		deleted_entries = []
-		# Inefficient worst case O(n^2) loop, the paper says
-		# "It is a fairly straightforward exercise to implement this method in O(m) time, say, by
-		# using a link-list-based priority queue of cells in T indexed by their count fields and
-		# modifying the DELETE method to update this queue each time it deletes an entry from B."
-		while True:
+		check = 1 
+		while check > 0 :	
+			check = 0	
 			for i in range( len( T ) ):
 				entry = T[i]
-				if entry[0] == 1 or entry[0] == -1:
-					if entry[0] == 1 and \
-							entry[3] == self.__value_to_int_array( IBLT.get_key_hash( self.__int_array_to_value( entry[1] ) ), self.hash_key_sum_size ):
-						key = self.__int_array_to_value( entry[1] )
-						value = self.__int_array_to_value( entry[2] )
-						entries.append( ( key, value ) )
-						self.__delete( T, key, value )
-						break
-					elif entry[0] == -1 and \
-							self.__negate_int_array( entry[3] ) == self.__value_to_int_array( IBLT.get_key_hash( self.__int_array_to_value( self.__negate_int_array( entry[1] ) ) ), self.hash_key_sum_size ):
-						key = self.__int_array_to_value( self.__negate_int_array( entry[1] ) )
-						value = self.__int_array_to_value( self.__negate_int_array( entry[2] ) )
-						deleted_entries.append( ( key, value ) )
-						self.__insert( T, key, value )
-						break
-			else:
-				break
+				if entry[0] == 0 and entry[2] == 0 :
+					a = 1
+				elif entry[2] == int(hashlib.md5(hex(entry[0])[2:-1].zfill(32)).hexdigest(),16) :
+					check = 1
+					entries.append((hex(entry[0])[2:-1].zfill(32), hex(entry[1])[2:-1].zfill(32)))
+					self.insert(T, hex(entry[0])[2:-1].zfill(32), hex(entry[1])[2:-1].zfill(32))
 
 		if any( filter( lambda e: e[0] != 0, T ) ):
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )
@@ -255,79 +193,15 @@ class IBLT:
 		result += self.m * ( 4 + self.key_size + self.value_size + self.hash_key_sum_size )
 		return result
 
-	def dump( self ):
-		IBLT.__dump( self.T )
 
-	@staticmethod
-	def __dump( T ):
-		print "DUMP START::::::::::::::::::::::"
-		print "Count sum: %d" % sum( map( lambda e: e[0], T ) )
-		print "Non-empty count: %d" % len( filter( lambda e: e[0] > 0, T ) )
-		print "Below-zero sum: %d" % sum( map( lambda e: e[0], filter( lambda e: e[0] < 0, T ) ) )
-		print "Below-zero count: %d" % len( filter( lambda e: e[0] < 0, T ) )
-		for i in range( len( T ) ):
-			e = T[i]
-#			if e[0] > 0:
-			print "%d: %s" % ( i, e )
-		print "DUMP END::::::::::::::::::::::::"
+	# Assuming there are no more than 4 hash functions, according to the paper
+	def __hash(self, i, value) :
+		if i == 0 :
+			return int(value[0:8], 16)%self.m
+		elif i == 1 :
+			return int(value[8:16], 16)%self.m
+		elif i == 2 :
+			return int(value[16:24], 16)%self.m
+		else :
+			return int(value[24:32], 16)%self.m
 
-	@staticmethod
-	def get_key_hash( key ):
-		return hashlib.sha512( key ).digest()
-
-	hash_hex_length = None
-	def __hash( self, i, value ):
-		if self.hash_hex_length == None:
-			# Find the shortest length to extract from the hash,
-			# get the bit length of m and divide by four to get hex length
-			self.hash_hex_length = int( math.ceil( math.log( self.m, 2 ) / 4.0 ) )
-		if not 0 <= i < self.k:
-			raise Exception( 'Hash i must be between 0 and %d (%d)' % ( self.k, i ) )
-		return int( hashlib.sha512( str( i ) + value ).hexdigest()[:self.hash_hex_length], 16 ) % self.m
-
-	def __sum_int_arrays( self, arr1, arr2 ):
-		assert len( arr1 ) == len( arr2 )
-		result = [0 for i in range( len( arr1 ) ) ]
-		for i in range( len( arr1 ) ):
-			result[i] = ( arr1[i] + arr2[i] ) % 256
-		return result
-
-	def __diff_int_arrays( self, arr1, arr2 ):
-		assert len( arr1 ) == len( arr2 )
-		result = [0 for i in range( len( arr1 ) ) ]
-		for i in range( len( arr1 ) ):
-			result[i] = ( arr1[i] - arr2[i] ) % 256
-		return result
-
-	def __value_to_int_array( self, value, length ):
-		return [ord(value[i]) if i < len( value ) else 0 for i in range( length )]
-
-	def __int_array_to_value( self, arr ):
-		val = "".join( [ chr(i) for i in arr ] )
-		# Cut zero bytes from the right, since they are 
-		# not part of the actual value
-		return val.rstrip( '\x00' ) 
-
-	def __negate_int_array( self, arr ):
-		return map( lambda i: (256-i) % 256, arr )
-
-	def __eq__( self, other ):
-		# Check if correct class
-		if not isinstance( other, IBLT ):
-			return False
-
-		# Check if variables match
-		if not all( ( ( self.m == other.m ),
-					  ( self.k == other.k ),
-				      ( self.key_size == other.key_size ),
-				 	  ( self.value_size == other.value_size ),
-					  ( self.hash_key_sum_size == other.hash_key_sum_size ),
-					  ( len( self.T ) == len( other.T ) ) ) ):
-			return False
-
-		# Check if actual data match
-		for i in xrange( self.m ):
-			c1, c2 = self.T[i], other.T[i]
-			if c1 != c2:
-				return False
-		return True

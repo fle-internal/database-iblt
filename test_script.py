@@ -1,5 +1,5 @@
 import math
-from iblt_xor import IBLT
+from iblt import IBLT
 from time import time
 import cProfile
 import hashlib
@@ -86,7 +86,7 @@ file.close()
 """
 
 file_compare = open("compare.txt","a")
-file_compare.write(str(make_iblt(10000, 10000)/full_db(10000,10000)))
+file_compare.write(str(make_iblt(10000, 9997)/full_db(10000, 9997)))
 file_compare.write("\n")
 #cProfile.run('make_iblt(10000,10000)')
 #print cProfile.run('full_db(10000, 10000)')
