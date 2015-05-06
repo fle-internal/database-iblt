@@ -122,11 +122,14 @@ def full_db(len1, len2):
 		if not(dict_a.has_key(key)):
 			dict_b_minus_a.update({key:dict_b[key]}) 
 	end = time()
+	# Converting dictionary to lists
+	entries = dict_a_minus_b.items()
+	deleted_entries = dict_b_minus_a.items()
 	#return end-start
-	#return dict_a_minus_b
-	return dict_b_minus_a
+	return (entries, deleted_entries)
 
 result1 = full_db(10, 11)
 print result1
 result = make_iblt(10,11)
+print result
 assert result[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
