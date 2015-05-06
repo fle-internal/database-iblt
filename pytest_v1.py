@@ -4,6 +4,7 @@ import pytest
 import math
 import cProfile
 import hashlib
+import sys 
 
 from iblt_xor import IBLT
 from time import time
@@ -91,3 +92,5 @@ def test() :
 				#print "full DB", db1, db2
 				result = full_db(db1, db2)
 
+if (sys.argv[0] == "pytest_v1.py") and (len(sys.argv) > 2) :
+	assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
