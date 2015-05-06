@@ -128,16 +128,18 @@ class IBLT:
 					check = 1	
 					if entry[0] == 1 : 
 						if entry[3] != int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16) :
-							raise NameError('The hashed key does not match the hash(key)')
+							#raise NameError('The hashed key does not match the hash(key)')
+							print "The hashed key does not match the hash(key)"
 						else :
 							entries.append((hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
 							self.delete(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
 					elif entry[0] == -1 :
 						if entry[3] != int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
-							raise NameError('The hashed key does not match the hash(key)')
+							#raise NameError('The hashed key does not match the hash(key)')
+							print "The hashed key does not match the hash(key)"
 						else :
-							entries.append((str(entry[1]), str(entry[2])))
+							deleted_entries.append((str(entry[1]), str(entry[2])))
                                    			entry[0] = 1; 
 			       	                	self.delete(T, str(entry[1]), str(entry[2]))
 

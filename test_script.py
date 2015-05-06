@@ -1,5 +1,5 @@
 import math
-from iblt import IBLT
+from iblt_xor import IBLT
 from time import time
 import cProfile
 import hashlib
