@@ -4,7 +4,7 @@ import math
 import cProfile
 import hashlib
 
-#from iblt_old import IBLT_OLD
+from iblt_old import IBLT_OLD
 from iblt_xor import IBLT
 from time import time
 
@@ -23,7 +23,6 @@ def make_iblt(len1, len2):
 		t1 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
 		t2 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
 	else :
-
 		t1 = IBLT(int(math.ceil(size_iblt)), 4)
 		t2 = IBLT(int(math.ceil(size_iblt)), 4)
 
@@ -37,57 +36,6 @@ def make_iblt(len1, len2):
 	entries = t1.list_entries()
 	end = time()
 	return entries 
-
-"""
-def make_iblt_old(len1, len2):
-
-        size_iblt = abs(len1-len2)*1.4
-        if size_iblt < 6:
-                size_iblt =6
-        t1 = IBLT(int(math.ceil(size_iblt)), 4, 10, 10)
-        t2 = IBLT(int(math.ceil(size_iblt)), 4, 10, 10)
-
-        start = time()
-        pairs1 = [( "key%d" % i, "value%d" % i ) for i in range(len1)]
-        for key, value in pairs1:
-                t1.insert( key, value )
-        pairs2 = [( "key%d" % i, "value%d" % i ) for i in range(len2)]
-        for key, value in pairs2:
-                t2.insert( key, value )
-
-        t1.subtract(t1.T,t2.T)
-        end = time()
-        #print t1.list_entries()
-        return end-start
-
-	pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
-	pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
-	start = time()
-	size_iblt = abs(len1-len2)*1.4
-	if size_iblt == 0:
-		size_iblt =1
-		t1 = IBLT_OLD(int(math.ceil(size_iblt)), 1)
-		t2 = IBLT_OLD(int(math.ceil(size_iblt)), 1)
-	elif size_iblt < 4:
-		t1 = IBLT_OLD(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
-		t2 = IBLT_OLD(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
-	else :
-
-		t1 = IBLT_OLD(int(math.ceil(size_iblt)), 4)
-		t2 = IBLT_OLD(int(math.ceil(size_iblt)), 4)
-
-	for key, value in pairs1:
-	   	t1.insert( t1.T, key, value )
-
-	for key, value in pairs2:
-        	t2.insert( t2.T, key, value )
-	
-	t1.subtract(t1.T,t2.T)
-	t1.list_entries()
-	end = time()
-	
-	#return end - start
-"""
 
 # Returns the absolute value of the argument passed
 def abs(num):
