@@ -90,6 +90,7 @@ class IBLT:
 			# Subtract key hash from hashkeySum
 			hashed_key = hashlib.md5(key).hexdigest()
 			T[index][3] =  T[index][3]^int(hashed_key, 16)
+		#print T
 
 	def subtract (self, arr1, arr2):
 		for i in range(0, len(arr1)):
@@ -136,15 +137,16 @@ class IBLT:
 			for i in range( len( T ) ):
 				entry = T[i]
 				if entry[0] == 1 or entry[0] == -1:
-					check = 1	
 					if entry[0] == 1 : 
 						if entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16) :
+							check = 1	
 							#raise NameError('The hashed key does not match the hash(key)')
 							#print "The hashed key does not match the hash(key)"
 						#else :
 						        #Should be this because this is the key and value being passed 
 							#entries.append(str(hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
 							#The way in which entries are stored in the IBLT			
+							#print "In 1 loop, entry number ",i
 							entries.append((str(entry[1]), str(entry[2])))
 							self.delete(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
@@ -152,6 +154,8 @@ class IBLT:
 						# make same changes as above in entries.append
 						if entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
 							#raise NameError('The hashed key does not match the hash(key)')
+							check = 1	
+							#print "In -1 loop, entry number ",i
 							#print "The hashed key does not match the hash(key)"
 						#else :
 							deleted_entries.append((str(entry[1]), str(entry[2])))
