@@ -67,10 +67,23 @@ def abs(num):
 # Calculates the set difference by sending full database instead of IBLT
 # Assuming that the dbs given to us are not in the form of dictionaries, we create 2 dictionaries
 # insert values and then find out the difference between them 
-def full_db(len1, len2):
+# Third argument is the percentage of smaller set which intersects which the larger one
+def full_db(len1, len2, percentage_intersection):
 
-	pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
-	pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
+	if percentage_intersection > 100 or percentage_intersection < 0:
+		raise NameError('Percentage should lie between 0 and 100 ')		
+	if len1 >= len2 :
+		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
+		intersection = int(percentage_intersection*len2*.01)
+		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
+		for x in range(len1, len1+len2-int(intersection)):
+			pairs2.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
+	else :
+		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
+		intersection = int(percentage_intersection*len1*.01)
+		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
+		for x in range(len2, len2+len1-intersection):
+			pairs1.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
 	start = time()
 	dict_a = {}
 
@@ -150,6 +163,7 @@ def testing_iblt_func():
 	assert t2.is_empty() 
 
 @xfail(reason="unknown")
+#If db1 and db2 have some intersection
 def test(): 
 	for percent in range(0, 110, 10):
 		for db1 in range(10, 100, 10):
@@ -164,7 +178,7 @@ def test():
 					assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 				else:
 					#print "full DB", db1, db2, percent, intersection
-					result = full_db(db1, db2)
+					result = full_db(db1, db2, percent)
 
 
 @xfail(reason="unknown")
@@ -177,7 +191,7 @@ def db2_subsetOf_db1():
 				print "comes here"
 				assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 			else:
-				result = full_db(db1, db2)
+				result = full_db(db1, db2,100)
 
 
 @xfail(reason="unknown")
@@ -190,7 +204,7 @@ def db1_subsetOf_db2():
 				print "comes here"
 				assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 			else:
-				result = full_db(db1, db2)
+				result = full_db(db1, db2,100)
 
 
 
