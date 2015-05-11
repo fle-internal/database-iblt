@@ -11,12 +11,26 @@ from time import time
 
 xfail = pytest.mark.xfail
 # Returning list after subtraction and not the time taken
-def make_iblt(len1, len2):
+# Third argument is the percentage of smaller set which intersects which the larger one
+def make_iblt(len1, len2,percentage_intersection):
 
-	pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
-	pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
+	if percentage_intersection > 100 or percentage_intersection < 0:
+		raise NameError('Percentage should lie between 0 and 100 ')		
+	if len1 >= len2 :
+		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
+		intersection = int(percentage_intersection*len2*.01)
+		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
+		for x in range(len1, len1+len2-int(intersection)):
+			pairs2.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
+	else :
+		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
+		intersection = int(percentage_intersection*len1)
+		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
+		for x in range(len2, len2+len1-intersection):
+			pairs1.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
+
 	start = time()
-	size_iblt = abs(len1-len2)*1.5
+	size_iblt = (len1+len2- 2*intersection)*1.4
 	#print "size of IBLT", size_iblt
 	if size_iblt == 0:
 		size_iblt =1
@@ -35,6 +49,8 @@ def make_iblt(len1, len2):
 	for key, value in pairs2:
         	t2.insert( t2.T, key, value )
 
+	#print t1.T
+	#print t2.T
 	t1.subtract(t1.T,t2.T)
 	entries = t1.list_entries()
 	end = time()
@@ -79,18 +95,23 @@ def full_db(len1, len2):
 	#return end-start
 	return (entries, deleted_entries)
 
-
-@xfail(reason="unknown")
-def test() :
-	for db1 in range(10, 100, 10):
-		for db2 in range(10, 100, 10):
-			# If the difference between databses is lesser than 30% of the larger database then go with the IBLT approach
-			if (int(max(db1, db2)*.3) >= abs(db1 - db2)):
-				#print "IBLT", db1, db2
-				assert make_iblt(db1, db2)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
-			else:
-				#print "full DB", db1, db2
-				result = full_db(db1, db2)
-
+#@xfail(reason="unknown")
+def test(): 
+	for percent in range(0, 100, 10):
+		for db1 in range(10, 100, 10):
+			for db2 in range(10, 100, 10):
+				# If the difference between databses is lesser than 30% of the larger database then go with the IBLT approach
+				intersection = int(min(db1,db2)*percent*.01)	
+				if (int(max(db1, db2)*.3) >= db1+db2-2*intersection):
+					print "IBLT db1 db2 percent intersection ", db1, db2, percent ,intersection
+					assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+				else:
+					print "full DB", db1, db2, percent, intersection
+					result = full_db(db1, db2)
+test()
 if (sys.argv[0] == "pytest_v1.py") and (len(sys.argv) > 2) :
-	assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
+	assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+
+
+
+

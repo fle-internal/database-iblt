@@ -52,9 +52,7 @@ class IBLT:
 
 		
 	def insert( self, T, key, value ):
-
 		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-
 		for index in indices:
 			# Increase count
 			T[index][0] += 1
@@ -72,6 +70,19 @@ class IBLT:
 		for index in indices:
 			# Decrease count
                         T[index][0] -= 1
+                        # Subtract key from keySum
+                        T[index][1] = T[index][1]^int(key, 16)
+                        # Subtract value from valueSum
+                        T[index][2] = T[index][2]^int(value, 16)
+			# Subtract key hash from hashkeySum
+			hashed_key = hashlib.md5(key).hexdigest()
+			T[index][3] =  T[index][3]^int(hashed_key, 16)
+
+	def add( self, T, key, value ):
+		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
+		for index in indices:
+			#increase count
+                        T[index][0] += 1
                         # Subtract key from keySum
                         T[index][1] = T[index][1]^int(key, 16)
                         # Subtract value from valueSum
@@ -127,21 +138,24 @@ class IBLT:
 				if entry[0] == 1 or entry[0] == -1:
 					check = 1	
 					if entry[0] == 1 : 
-						if entry[3] != int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16) :
+						if entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16) :
 							#raise NameError('The hashed key does not match the hash(key)')
-							print "The hashed key does not match the hash(key)"
-						else :
-							entries.append((hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
+							#print "The hashed key does not match the hash(key)"
+						#else :
+						        #Should be this because this is the key and value being passed 
+							#entries.append(str(hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
+							#The way in which entries are stored in the IBLT			
+							entries.append((str(entry[1]), str(entry[2])))
 							self.delete(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
 					elif entry[0] == -1 :
-						if entry[3] != int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
+						# make same changes as above in entries.append
+						if entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
 							#raise NameError('The hashed key does not match the hash(key)')
-							print "The hashed key does not match the hash(key)"
-						else :
+							#print "The hashed key does not match the hash(key)"
+						#else :
 							deleted_entries.append((str(entry[1]), str(entry[2])))
-                                   			entry[0] = 1; 
-			       	                	self.delete(T, str(entry[1]), str(entry[2]))
+							self.add(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
 		if any( filter( lambda e: e[0] != 0, T ) ):
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )
