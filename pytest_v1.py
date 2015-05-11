@@ -96,7 +96,58 @@ def full_db(len1, len2):
 	#return end-start
 	return (entries, deleted_entries)
 
-#print make_iblt(60,60,90)
+
+def testing_iblt_func():
+
+	pairs = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(1)]
+	t1 = IBLT(2, 2)
+	# IBLT created should be empty
+	assert t1.is_empty() 
+
+	for key, value in pairs:
+	   	t1.insert( t1.T, key, value )
+	# Check if the entry is inserted
+	assert not t1.is_empty() 
+
+	# Check if we are able to list the entries
+	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+
+	for key, value in pairs:
+	   	t1.delete( t1.T, key, value )
+	# Check if the entry is deleted
+	assert t1.is_empty() 
+
+	# Check if the status is complete on retrieving entries from an empty IBLT 
+	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+
+	# Insert entries in t1 again
+	for key, value in pairs:
+	   	t1.insert( t1.T, key, value )
+	# Create a new empty IBLT
+	t2 = IBLT(2,2)
+	# Subtraction : t1-t2 (results in entries with positive count)
+	t1.subtract(t1.T, t2.T)
+	# Check if we are able to get entries from the result of subtraction
+	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
+
+	#delete the entries from the result of previous subtraction
+	for key, value in pairs:
+	   	t1.delete( t1.T, key, value )
+	# Check if the entry is deleted
+	assert t1.is_empty() 
+
+	#Insert the entries again in first IBLT	
+	for key, value in pairs:
+	   	t1.insert( t1.T, key, value )
+	# Subtraction : t2-t1 (results in entries with negative count)
+	t1.subtract(t2.T, t1.T)
+	# Check if we are able to get entries from the result of subtraction
+	assert t2.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
+
+	# Add entries back to t2	
+	for key, value in pairs:
+	   	t2.add( t2.T, key, value )
+	assert t2.is_empty() 
 
 @xfail(reason="unknown")
 def test(): 
@@ -142,8 +193,14 @@ def db1_subsetOf_db2():
 				result = full_db(db1, db2)
 
 
+
+testing_iblt_func()
 #db2_subsetOf_db1()
+#print make_iblt(60,60,90)
 #test()
+
+
+
 if (sys.argv[0] == "pytest_v1.py") and (len(sys.argv) > 2) :
 	assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
