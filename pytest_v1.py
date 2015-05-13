@@ -193,7 +193,8 @@ def test():
 					#result = make_iblt(db1,db2,percent)
 					#if result[0] != IBLT.RESULT_LIST_ENTRIES_COMPLETE:
 					#	print db1, db2, percent 
-					assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+					#assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+					assert verify_iblt_results(db1, db2, percent) == 1
 				else:
 					#print "full DB", db1, db2, percent, intersection
 					result = full_db(db1, db2, percent)
@@ -206,8 +207,8 @@ def db2_subsetOf_db1():
 		for db2 in range(10, db1, 1):
 			intersection = db2
 			if (int(db1* IBLT_FRAC) >= db1-db2):
-				print "comes here"
-				assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+				assert verify_iblt_results(db1, db2, 100) == 1
+				#assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 			else:
 				result = full_db(db1, db2,100)
 
@@ -219,8 +220,8 @@ def db1_subsetOf_db2():
 		for db1 in range(10, db2, 1):
 			intersection = db1
 			if (int(db2*IBLT_FRAC) >= db2-db1):
-				print "comes here"
-				assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+				assert verify_iblt_results(db1, db2, 100) == 1	
+				#assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 			else:
 				result = full_db(db1, db2,100)
 
@@ -238,7 +239,8 @@ def test_bigDb():
 			#result = make_iblt(db1,db2,percent)
 			#if result[0] != IBLT.RESULT_LIST_ENTRIES_COMPLETE:
 			#	print db1, db2, percent 
-			assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+			#assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+			assert verify_iblt_results(db1, db2, percent) == 1
 		else:
 			print "full DB", db1, db2, percent, intersection
 			result = full_db(db1, db2, percent)
@@ -254,7 +256,8 @@ print verify_iblt_results(20,20,90)
 
 
 if (sys.argv[0] == "pytest_v1.py") and (len(sys.argv) > 2) :
-	assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+	#assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+	assert verify_iblt_results(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])) == 1
 
 
 
