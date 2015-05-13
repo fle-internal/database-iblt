@@ -27,9 +27,10 @@ def make_iblt(len1, len2,percentage_intersection):
 		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
 		intersection = int(percentage_intersection*len1*.01)
 		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
-		for x in range(len2, len2+len1-intersection):
+		for x in range(len2+len1-intersection, len2, -1):
 			pairs1.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
-
+	#print pairs1
+	#print pairs2
 	start = time()
 	size_iblt = (len1+len2- 2*intersection)*2
 	#print "size of IBLT", size_iblt
@@ -109,6 +110,19 @@ def full_db(len1, len2, percentage_intersection):
 	#return end-start
 	return (entries, deleted_entries)
 
+
+def verify_iblt_results(db1, db2, percentage_intersection) :
+	results_iblt = make_iblt(db1, db2, percentage_intersection)
+	results_full_db = full_db(db1, db2, percentage_intersection)
+	if results_iblt[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE: 
+		results_iblt[1].sort(key=lambda tup: tup[0]) 
+		results_iblt[2].sort(key=lambda tup: tup[0]) 
+		results_full_db[0].sort(key=lambda tup: tup[0]) 
+		results_full_db[1].sort(key=lambda tup: tup[0]) 
+		if results_iblt[1] == results_full_db[0] and results_iblt[2] == results_full_db[1]:
+			return 1
+		else : 
+			return 0
 
 def testing_iblt_func():
 
@@ -226,7 +240,9 @@ def test_bigDb():
 			result = full_db(db1, db2, percent)
 
 
-test_bigDb()
+print verify_iblt_results(20,20,90)
+#print full_db(10, 10, 0)
+#test_bigDb()
 #testing_iblt_func()
 #db2_subsetOf_db1()
 #print make_iblt(60,60,90)

@@ -143,7 +143,7 @@ class IBLT:
 							#raise NameError('The hashed key does not match the hash(key)')
 							#print "The hashed key does not match the hash(key)"
 						#else :
-							entries.append(str(hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
+							entries.append((str(hex(entry[1])[2:-1].zfill(32)), str(hex(entry[2])[2:-1].zfill(32))))
 							#The way in which entries are stored in the IBLT			
 							#print "In 1 loop, entry number ",i
 							#entries.append((str(entry[1]), str(entry[2])))
@@ -156,7 +156,7 @@ class IBLT:
 							#print "In -1 loop, entry number ",i
 							#print "The hashed key does not match the hash(key)"
 						#else :
-							deleted_entries.append(str(hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
+							deleted_entries.append((str(hex(entry[1])[2:-1].zfill(32)), str(hex(entry[2])[2:-1].zfill(32))))
 							#deleted_entries.append((str(entry[1]), str(entry[2])))
 							self.add(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
