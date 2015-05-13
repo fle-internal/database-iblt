@@ -9,6 +9,10 @@ import sys
 from iblt_xor import IBLT
 from time import time
 
+MUL_FACTOR = 2
+MAX_HASH = 4
+IBLT_FRAC = 0.3
+
 xfail = pytest.mark.xfail
 # Returning list after subtraction and not the time taken
 # Third argument is the percentage of smaller set which intersects which the larger one
@@ -32,18 +36,18 @@ def make_iblt(len1, len2,percentage_intersection):
 	#print pairs1
 	#print pairs2
 	start = time()
-	size_iblt = (len1+len2- 2*intersection)*2
+	size_iblt = (len1+len2- 2*intersection)*MUL_FACTOR
 	#print "size of IBLT", size_iblt
 	if size_iblt == 0:
 		size_iblt =1
 		t1 = IBLT(int(math.ceil(size_iblt)), 1)
 		t2 = IBLT(int(math.ceil(size_iblt)), 1)
-	elif size_iblt < 4:
+	elif size_iblt < MAX_HASH :
 		t1 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
 		t2 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
 	else :
-		t1 = IBLT(int(math.ceil(size_iblt)), 4)
-		t2 = IBLT(int(math.ceil(size_iblt)), 4)
+		t1 = IBLT(int(math.ceil(size_iblt)), MAX_HASH)
+		t2 = IBLT(int(math.ceil(size_iblt)), MAX_HASH)
 
 	for key, value in pairs1:
 	   	t1.insert( t1.T, key, value )
@@ -184,7 +188,7 @@ def test():
 			for db2 in range(10, 100, 10):
 				# If the difference between databses is lesser than 30% of the larger database then go with the IBLT approach
 				intersection = int(min(db1,db2)*percent*.01)	
-				if (int(max(db1, db2)*.3) >= db1+db2-2*intersection):
+				if (int(max(db1, db2)* IBLT_FRAC) >= db1+db2-2*intersection):
 					#print "IBLT db1 db2 percent intersection ", db1, db2, percent ,intersection
 					#result = make_iblt(db1,db2,percent)
 					#if result[0] != IBLT.RESULT_LIST_ENTRIES_COMPLETE:
@@ -201,7 +205,7 @@ def db2_subsetOf_db1():
 	for db1 in range(10, 100, 1):
 		for db2 in range(10, db1, 1):
 			intersection = db2
-			if (int(db1*.3) >= db1-db2):
+			if (int(db1* IBLT_FRAC) >= db1-db2):
 				print "comes here"
 				assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 			else:
@@ -214,7 +218,7 @@ def db1_subsetOf_db2():
 	for db2 in range(10, 100, 1):
 		for db1 in range(10, db2, 1):
 			intersection = db1
-			if (int(db2*.3) >= db2-db1):
+			if (int(db2*IBLT_FRAC) >= db2-db1):
 				print "comes here"
 				assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 			else:
@@ -229,7 +233,7 @@ def test_bigDb():
 		# If the difference between databses is lesser than 30% of the larger database then go with the IBLT approach
 		percent = percent * .1
 		intersection = int(min(db1,db2)*percent*.01)	
-		if (int(max(db1, db2)*.3) >= db1+db2-2*intersection):
+		if (int(max(db1, db2)* IBLT_FRAC) >= db1+db2-2*intersection):
 			print "IBLT db1 db2 percent intersection ", db1, db2, percent ,intersection
 			#result = make_iblt(db1,db2,percent)
 			#if result[0] != IBLT.RESULT_LIST_ENTRIES_COMPLETE:
@@ -247,7 +251,6 @@ print verify_iblt_results(20,20,90)
 #db2_subsetOf_db1()
 #print make_iblt(60,60,90)
 #test()
-
 
 
 if (sys.argv[0] == "pytest_v1.py") and (len(sys.argv) > 2) :
