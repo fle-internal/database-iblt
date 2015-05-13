@@ -143,22 +143,21 @@ class IBLT:
 							#raise NameError('The hashed key does not match the hash(key)')
 							#print "The hashed key does not match the hash(key)"
 						#else :
-						        #Should be this because this is the key and value being passed 
-							#entries.append(str(hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
+							entries.append(str(hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
 							#The way in which entries are stored in the IBLT			
 							#print "In 1 loop, entry number ",i
-							entries.append((str(entry[1]), str(entry[2])))
+							#entries.append((str(entry[1]), str(entry[2])))
 							self.delete(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
 					elif entry[0] == -1 :
-						# make same changes as above in entries.append
 						if entry[3] == int(hashlib.md5(hex(entry[1])[2:-1].zfill(32)).hexdigest(),16): 
 							#raise NameError('The hashed key does not match the hash(key)')
 							check = 1	
 							#print "In -1 loop, entry number ",i
 							#print "The hashed key does not match the hash(key)"
 						#else :
-							deleted_entries.append((str(entry[1]), str(entry[2])))
+							deleted_entries.append(str(hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32)))
+							#deleted_entries.append((str(entry[1]), str(entry[2])))
 							self.add(T, hex(entry[1])[2:-1].zfill(32), hex(entry[2])[2:-1].zfill(32))
 
 		if any( filter( lambda e: e[0] != 0, T ) ):

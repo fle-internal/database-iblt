@@ -207,8 +207,27 @@ def db1_subsetOf_db2():
 				result = full_db(db1, db2,100)
 
 
+#Check if the big databases work well
+def test_bigDb(): 
+	db1 = 10000
+	db2 = 10000
+	for percent in range(990, 1000, 1):
+		# If the difference between databses is lesser than 30% of the larger database then go with the IBLT approach
+		percent = percent * .1
+		intersection = int(min(db1,db2)*percent*.01)	
+		if (int(max(db1, db2)*.3) >= db1+db2-2*intersection):
+			print "IBLT db1 db2 percent intersection ", db1, db2, percent ,intersection
+			#result = make_iblt(db1,db2,percent)
+			#if result[0] != IBLT.RESULT_LIST_ENTRIES_COMPLETE:
+			#	print db1, db2, percent 
+			assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+		else:
+			print "full DB", db1, db2, percent, intersection
+			result = full_db(db1, db2, percent)
 
-testing_iblt_func()
+
+test_bigDb()
+#testing_iblt_func()
 #db2_subsetOf_db1()
 #print make_iblt(60,60,90)
 #test()
