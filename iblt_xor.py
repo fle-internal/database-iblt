@@ -81,13 +81,13 @@ class IBLT:
 			hashed_key = md5(key)
 			T[index][3] =  T[index][3]^int(hashed_key, 16)
 
-	def subtract (self, arr1, arr2):
-		for i in range(0, len(arr1)):
-			arr1[i][0] = arr1[i][0] - arr2[i][0]
-			arr1[i][1] = arr1[i][1] ^ arr2[i][1]	
-			arr1[i][2] = arr1[i][2] ^ arr2[i][2]
-			arr1[i][3] = arr1[i][3] ^ arr2[i][3]
-	        return arr1	
+	def subtract (self, other_iblt):
+		for i in range(0, len(self.T)):
+			self.T[i][0] = self.T[i][0] - other_iblt[i][0]
+			self.T[i][1] = self.T[i][1] ^ other_iblt[i][1]	
+			self.T[i][2] = self.T[i][2] ^ other_iblt[i][2]
+			self.T[i][3] = self.T[i][3] ^ other_iblt[i][3]
+	        return self.T	
 
 	def get( self, key ):
 		"""
@@ -120,29 +120,30 @@ class IBLT:
 		T = deepcopy( self.T )
 		entries = []
 		deleted_entries = []
+		if len(T) == 0 :	
+			return ( IBLT.RESULT_LIST_ENTRIES_COMPLETE, entries, deleted_entries )
 		check = 1 
-		while check > 0 :	
+		while check == 1 :	
 			check = 0	
 			for i in range( len( T ) ):
 				entry = T[i]
 				if entry[0] == 1 or entry[0] == -1:
+					retrieved_tup = (format(entry[1], 32), format(entry[2], 40))
+					hashed_key = int(md5(retrieved_tup[0]), 16)  
 					if entry[0] == 1 : 
-						if entry[3] == int(md5(format(entry[1], 32)),16) :
+						if entry[3] == hashed_key :
 							check = 1	
 							#raise NameError('The hashed key does not match the hash(key)')
-							#print "The hashed key does not match the hash(key)"
-							entries.append((format(entry[1], 32), format(entry[2], 40)))
-							self.delete(T, format(entry[1], 32), format(entry[2], 40))
+							entries.append(retrieved_tup)
+							self.delete(T, retrieved_tup[0], retrieved_tup[1])
 
 					elif entry[0] == -1 :
-						if entry[3] == int(md5(format(entry[1], 32)),16): 
+						if entry[3] == hashed_key :
 							check = 1	
 							#raise NameError('The hashed key does not match the hash(key)')
-							#print "The hashed key does not match the hash(key)"
-							deleted_entries.append((format(entry[1], 32), format(entry[2], 40)))
-							self.insert(T, format(entry[1], 32), format(entry[2], 40))
-
-		if any( filter( lambda e: e[0] != 0, T ) ):
+							deleted_entries.append(retrieved_tup)
+							self.insert(T, retrieved_tup[0], retrieved_tup[1])
+		if any( filter( lambda e: (e[0] != 0 or (e[0] == 0 and e[1] != 0)), T ) ):
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )
 		return ( IBLT.RESULT_LIST_ENTRIES_COMPLETE, entries, deleted_entries )
 

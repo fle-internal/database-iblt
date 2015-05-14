@@ -15,22 +15,18 @@ MAX_HASH = 4
 IBLT_FRAC = 0.3
 
 # Third argument is the percentage of smaller set which intersects with the larger one
-def generate_lists (size_db1, size_db2, percentage_intersection):
+def generate_lists (size_db1, size_db2, percentage_intersection, seed):
+	intersection = int(percentage_intersection * min(size_db1, size_db2) * .01)
+	total = size_db1 + size_db2 - intersection
+	dataset = [( md5(seed+"key%d" % i), sha1(seed+"value%d" % i)) for i in range(total)]
 	if size_db1 >= size_db2 :
-		pairs1 = [( md5("key%d" % i), sha1("value%d" % i)) for i in range(size_db1)]
-		intersection = int(percentage_intersection*size_db2*.01)
-		pairs2 = [( md5("key%d" % i), sha1("value%d" % i)) for i in range(intersection)]
-		for x in range(size_db1, size_db1+size_db2 - intersection):
-			pairs2.append(( md5("key%d" % x), sha1("value%d" % x)))
+		pairs1 = dataset[0:size_db1]
+		pairs2 = dataset[size_db1-intersection:total]
 	else :
-		pairs2 = [(md5("key%d" % i), sha1("value%d" % i)) for i in range(size_db2)]
-		intersection = int(percentage_intersection*size_db1*.01)
-		pairs1 = [(md5("key%d" % i), sha1("value%d" % i)) for i in range(intersection)]
-		for x in range(size_db2, size_db2 + size_db1-intersection):
-			pairs1.append((md5("key%d" % x), sha1("value%d" % x)))
-
-	print "pairs1", pairs1
-	print "pairs2", pairs2
+		pairs2 = dataset[0:size_db2]
+		pairs1 = dataset[size_db2-intersection:total]
+	#print "pairs1", pairs1
+	#print "pairs2", pairs2
 	return (pairs1, pairs2, intersection)
 
 xfail = pytest.mark.xfail
@@ -40,23 +36,22 @@ def make_iblt(len1, len2,percentage_intersection):
 
 	if percentage_intersection > 100 or percentage_intersection < 0:
 		raise NameError('Percentage should lie between 0 and 100 ')		
-	db_input = generate_lists( len1, len2, percentage_intersection) 
+	db_input = generate_lists( len1, len2, percentage_intersection, "") 
 	pairs1 = db_input[0]
 	pairs2 = db_input[1]
 	intersection = db_input[2]
 	start = time()
-	size_iblt = (len1+len2- 2*intersection)*MUL_FACTOR
+	size_iblt = int(math.ceil((len1+len2- 2*intersection)*MUL_FACTOR))
 	#print "size of IBLT", size_iblt
 	if size_iblt == 0:
-		size_iblt =1
-		t1 = IBLT(int(math.ceil(size_iblt)), 1)
-		t2 = IBLT(int(math.ceil(size_iblt)), 1)
+		t1 = IBLT(1, 1)
+		t2 = IBLT(1, 1)
 	elif size_iblt < MAX_HASH :
-		t1 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
-		t2 = IBLT(int(math.ceil(size_iblt)),int(math.ceil(size_iblt)))
+		t1 = IBLT(size_iblt, size_iblt)
+		t2 = IBLT(size_iblt, size_iblt)
 	else :
-		t1 = IBLT(int(math.ceil(size_iblt)), MAX_HASH)
-		t2 = IBLT(int(math.ceil(size_iblt)), MAX_HASH)
+		t1 = IBLT(size_iblt, MAX_HASH)
+		t2 = IBLT(size_iblt, MAX_HASH)
 
 	for key, value in pairs1:
 	   	t1.insert( t1.T, key, value )
@@ -64,12 +59,11 @@ def make_iblt(len1, len2,percentage_intersection):
 	for key, value in pairs2:
         	t2.insert( t2.T, key, value )
 
-	print t1.T
-	print t2.T
-	print t1.subtract(t1.T,t2.T)
-	entries = t1.list_entries()
+	#print t1.T
+	#print t2.T
+	#print t1.subtract(t2.T)
 	end = time()
-	return entries 
+	return t1.list_entries()
 
 # Returns the absolute value of the argument passed
 def abs(num):
@@ -77,6 +71,11 @@ def abs(num):
 		return num*-1
 	else :
 		return num
+
+def generate_dict(dictionary, list_tuples):
+	for key, value in list_tuples:
+	     	dictionary.update({key: value})
+
 
 # Calculates the set difference by sending full database instead of IBLT
 # Assuming that the dbs given to us are not in the form of dictionaries, we create 2 dictionaries
@@ -86,22 +85,19 @@ def full_db(len1, len2, percentage_intersection):
 
 	if percentage_intersection > 100 or percentage_intersection < 0:
 		raise NameError('Percentage should lie between 0 and 100 ')		
-	db_input = generate_lists( len1, len2, percentage_intersection) 
+	db_input = generate_lists( len1, len2, percentage_intersection, "") 
 	pairs1 = db_input[0]
 	pairs2 = db_input[1]
 	intersection = db_input[2]
 	start = time()
 	dict_a = {}
-
-	for key, value in pairs1:
-	     	dict_a.update({key: value })
-
 	dict_b = {}
-	for key, value in pairs2:
-        	dict_b.update({key: value })
-
 	dict_a_minus_b = {}
 	dict_b_minus_a = {}
+
+	generate_dict(dict_a, pairs1)
+	generate_dict(dict_b, pairs2)
+
 	for key in dict_a :
 		if not(dict_b.has_key(key)):
 			dict_a_minus_b.update({key:dict_a[key]})	
@@ -162,7 +158,7 @@ def subtract_aMinusB_IBLT():
 	# Create a new empty IBLT
 	t2 = IBLT(2,2)
 	# Subtraction : t1-t2 (results in entries with positive count)
-	t1.subtract(t1.T, t2.T)
+	t1.subtract(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
 	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
@@ -180,7 +176,7 @@ def subtract_bMinusA_IBLT():
 	t2 = IBLT(2,2)
 	t2.insert( t.T, md5("key"), sha1("value") )
 	# Subtraction : results in entries with negative count
-	t1.subtract(t1.T, t2.T)
+	t1.subtract(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
 	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
@@ -259,8 +255,8 @@ def test_bigDb():
 
 
 #print full_db(1,1,0)
-print make_iblt(1,0,0)
-#print verify_iblt_results(20,20,90)
+#print make_iblt(1,0,0)
+print verify_iblt_results(10,10,100)
 #print full_db(10, 10, 0)
 #test_bigDb()
 #testing_iblt_func()
