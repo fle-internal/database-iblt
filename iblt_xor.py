@@ -81,20 +81,6 @@ class IBLT:
 			hashed_key = md5(key)
 			T[index][3] =  T[index][3]^int(hashed_key, 16)
 
-	def add( self, T, key, value ):
-		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-		for index in indices:
-			#increase count
-                        T[index][0] += 1
-                        # Subtract key from keySum
-                        T[index][1] = T[index][1]^int(key, 16)
-                        # Subtract value from valueSum
-                        T[index][2] = T[index][2]^int(value, 16)
-			# Subtract key hash from hashkeySum
-			hashed_key = md5(key)
-			T[index][3] =  T[index][3]^int(hashed_key, 16)
-		#print T
-
 	def subtract (self, arr1, arr2):
 		for i in range(0, len(arr1)):
 			arr1[i][0] = arr1[i][0] - arr2[i][0]
@@ -154,7 +140,7 @@ class IBLT:
 							#raise NameError('The hashed key does not match the hash(key)')
 							#print "The hashed key does not match the hash(key)"
 							deleted_entries.append((format(entry[1], 32), format(entry[2], 40)))
-							self.add(T, format(entry[1], 32), format(entry[2], 40))
+							self.insert(T, format(entry[1], 32), format(entry[2], 40))
 
 		if any( filter( lambda e: e[0] != 0, T ) ):
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )

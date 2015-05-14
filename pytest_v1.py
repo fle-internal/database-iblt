@@ -129,57 +129,68 @@ def verify_iblt_results(db1, db2, percentage_intersection) :
 		else : 
 			return 0
 
-def testing_iblt_func():
-
-	pairs = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(1)]
-	t1 = IBLT(2, 2)
+def creating_IBLT():
+	t = IBLT(2, 2)
 	# IBLT created should be empty
-	assert t1.is_empty() 
+	assert t.is_empty() 
 
-	for key, value in pairs:
-	   	t1.insert( t1.T, key, value )
+def insert_IBLT():
+	t = IBLT(2, 2)
+	t.insert( t.T, md5("key"), sha1("value") )
 	# Check if the entry is inserted
 	assert not t1.is_empty() 
+	return t
 
+def list_entries_IBLT():
+	t = IBLT(2, 2)
+	t.insert( t.T, md5("key"), sha1("value") )
 	# Check if we are able to list the entries
-	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+	assert t.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
-	for key, value in pairs:
-	   	t1.delete( t1.T, key, value )
+def delete_IBLT():
+	t = IBLT(2, 2)
+	t.insert( t.T, md5("key"), sha1("value") )
+	t.delete( t.T, md5("key"), sha1("value") )
 	# Check if the entry is deleted
-	assert t1.is_empty() 
-
+	assert t.is_empty() 
 	# Check if the status is complete on retrieving entries from an empty IBLT 
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
-	# Insert entries in t1 again
-	for key, value in pairs:
-	   	t1.insert( t1.T, key, value )
+def subtract_aMinusB_IBLT():
+	t1 = IBLT(2, 2)
+	t1.insert( t.T, md5("key"), sha1("value") )
 	# Create a new empty IBLT
 	t2 = IBLT(2,2)
 	# Subtraction : t1-t2 (results in entries with positive count)
 	t1.subtract(t1.T, t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
+	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
+	return t1
 
-	#delete the entries from the result of previous subtraction
-	for key, value in pairs:
-	   	t1.delete( t1.T, key, value )
-	# Check if the entry is deleted
-	assert t1.is_empty() 
+#Check if deletion works after subtraction
+def delete_after_subtract_IBLT():
+	t = subtract_aMinusB_IBLT()
+	t.delete( t.T, md5("key"), sha1("value") )
+	assert t.is_empty() 
 
-	#Insert the entries again in first IBLT	
-	for key, value in pairs:
-	   	t1.insert( t1.T, key, value )
-	# Subtraction : t2-t1 (results in entries with negative count)
-	t1.subtract(t2.T, t1.T)
+def subtract_bMinusA_IBLT():
+	# Create an empty IBLT
+	t1 = IBLT(2, 2)
+	t2 = IBLT(2,2)
+	t2.insert( t.T, md5("key"), sha1("value") )
+	# Subtraction : results in entries with negative count
+	t1.subtract(t1.T, t2.T)
 	# Check if we are able to get entries from the result of subtraction
-	assert t2.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
+	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
+	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
+	return t1
 
-	# Add entries back to t2	
-	for key, value in pairs:
-	   	t2.add( t2.T, key, value )
-	assert t2.is_empty() 
+#Check if insertion works after subtraction
+def insert_after_subtract_IBLT():
+	t = subtract_bMinusA_IBLT()
+	t.insert( t.T, md5("key"), sha1("value") )
+	assert t.is_empty() 
 
 @xfail(reason="unknown")
 #If db1 and db2 have some intersection
