@@ -53,33 +53,24 @@ class IBLT:
        		self.empty_key_array = 0 
 		self.empty_hash_sum_array = 0 
 
+	def _xor_tuple(self, T , key, value, operation):
+		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
+		for index in indices:
+			if operation == "insert" : 
+				# Increase count
+				T[index][0] += 1
+	 		elif operation == "delete" :
+				# Decrease count
+				T[index][0] -= 1
+		      	T[index][1] = T[index][1]^int(key, 16)
+                        T[index][2] = T[index][2]^int(value, 16)
+			T[index][3] = T[index][3]^int(md5(key), 16)
 		
 	def insert( self, T, key, value ):
-		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-		for index in indices:
-			# Increase count
-			T[index][0] += 1
-			# Add key to keySum
-	        	T[index][1] = T[index][1]^int(key, 16)
-                        # Add value to valueSum
-                        T[index][2] = T[index][2]^int(value, 16)
-                        # Add key hash to hashkeySum
-			hashed_key = md5(key)
-			T[index][3] =  T[index][3]^int(hashed_key, 16)
-
+		self._xor_tuple(T, key, value, "insert")
 
 	def delete( self, T, key, value ):
-		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-		for index in indices:
-			# Decrease count
-                        T[index][0] -= 1
-                        # Subtract key from keySum
-                        T[index][1] = T[index][1]^int(key, 16)
-                        # Subtract value from valueSum
-                        T[index][2] = T[index][2]^int(value, 16)
-			# Subtract key hash from hashkeySum
-			hashed_key = md5(key)
-			T[index][3] =  T[index][3]^int(hashed_key, 16)
+		self._xor_tuple(T, key, value, "delete")
 
 	def subtract (self, other_iblt):
 		for i in range(0, len(self.T)):
@@ -143,7 +134,7 @@ class IBLT:
 							#raise NameError('The hashed key does not match the hash(key)')
 							deleted_entries.append(retrieved_tup)
 							self.insert(T, retrieved_tup[0], retrieved_tup[1])
-		if any( filter( lambda e: (e[0] != 0 or (e[0] == 0 and e[1] != 0)), T ) ):
+		if not self.is_empty() :
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )
 		return ( IBLT.RESULT_LIST_ENTRIES_COMPLETE, entries, deleted_entries )
 
@@ -152,7 +143,7 @@ class IBLT:
 		Returns true if the table is completely empty, i.e. no contains no entries,
 		inserted or deleted
 		"""
-		return all( map( lambda e: e[0] == 0, self.T ) )
+		return all( map( lambda e: e[0] == 0 and e[1]== 0, self.T ) )
 
 	def serialize( self ):
 		"""

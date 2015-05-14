@@ -59,9 +59,10 @@ def make_iblt(len1, len2,percentage_intersection):
 	for key, value in pairs2:
         	t2.insert( t2.T, key, value )
 
-	#print t1.T
-	#print t2.T
-	#print t1.subtract(t2.T)
+	print t1.T
+	print t2.T
+	print t1.subtract_inplace(t2.T)
+	print t1.list_entries()	
 	end = time()
 	return t1.list_entries()
 
@@ -72,16 +73,14 @@ def abs(num):
 	else :
 		return num
 
-def generate_dict(dictionary, list_tuples):
-	for key, value in list_tuples:
-	     	dictionary.update({key: value})
-
-
-# Calculates the set difference by sending full database instead of IBLT
-# Assuming that the dbs given to us are not in the form of dictionaries, we create 2 dictionaries
-# insert values and then find out the difference between them 
-# Third argument is the percentage of smaller set which intersects which the larger one
 def full_db(len1, len2, percentage_intersection):
+
+	"""
+	Calculates the set difference by sending full database instead of IBLT
+	Assuming that the dbs given to us are not in the form of dictionaries, we create 2 dictionaries
+	insert values and then find out the difference between them 
+	Third argument is the percentage of smaller set which intersects which the larger one
+	"""
 
 	if percentage_intersection > 100 or percentage_intersection < 0:
 		raise NameError('Percentage should lie between 0 and 100 ')		
@@ -90,13 +89,10 @@ def full_db(len1, len2, percentage_intersection):
 	pairs2 = db_input[1]
 	intersection = db_input[2]
 	start = time()
-	dict_a = {}
-	dict_b = {}
+	dict_a = dict(pairs1)
+	dict_b = dict(pairs2)
 	dict_a_minus_b = {}
 	dict_b_minus_a = {}
-
-	generate_dict(dict_a, pairs1)
-	generate_dict(dict_b, pairs2)
 
 	for key in dict_a :
 		if not(dict_b.has_key(key)):
@@ -158,7 +154,7 @@ def subtract_aMinusB_IBLT():
 	# Create a new empty IBLT
 	t2 = IBLT(2,2)
 	# Subtraction : t1-t2 (results in entries with positive count)
-	t1.subtract(t2.T)
+	t1.subtract_inplace(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
 	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
@@ -176,7 +172,7 @@ def subtract_bMinusA_IBLT():
 	t2 = IBLT(2,2)
 	t2.insert( t.T, md5("key"), sha1("value") )
 	# Subtraction : results in entries with negative count
-	t1.subtract(t2.T)
+	t1.subtract_inplace(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
 	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
