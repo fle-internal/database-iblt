@@ -8,10 +8,30 @@ import sys
 
 from iblt_xor import IBLT
 from time import time
+from iblt_xor import *
 
 MUL_FACTOR = 2
 MAX_HASH = 4
 IBLT_FRAC = 0.3
+
+# Third argument is the percentage of smaller set which intersects with the larger one
+def generate_lists (size_db1, size_db2, percentage_intersection):
+	if size_db1 >= size_db2 :
+		pairs1 = [( md5("key%d" % i), sha1("value%d" % i)) for i in range(size_db1)]
+		intersection = int(percentage_intersection*size_db2*.01)
+		pairs2 = [( md5("key%d" % i), sha1("value%d" % i)) for i in range(intersection)]
+		for x in range(size_db1, size_db1+size_db2 - intersection):
+			pairs2.append(( md5("key%d" % x), sha1("value%d" % x)))
+	else :
+		pairs2 = [(md5("key%d" % i), sha1("value%d" % i)) for i in range(size_db2)]
+		intersection = int(percentage_intersection*size_db1*.01)
+		pairs1 = [(md5("key%d" % i), sha1("value%d" % i)) for i in range(intersection)]
+		for x in range(size_db2, size_db2 + size_db1-intersection):
+			pairs1.append((md5("key%d" % x), sha1("value%d" % x)))
+
+	print "pairs1", pairs1
+	print "pairs2", pairs2
+	return (pairs1, pairs2, intersection)
 
 xfail = pytest.mark.xfail
 # Returning list after subtraction and not the time taken
@@ -20,21 +40,10 @@ def make_iblt(len1, len2,percentage_intersection):
 
 	if percentage_intersection > 100 or percentage_intersection < 0:
 		raise NameError('Percentage should lie between 0 and 100 ')		
-	if len1 >= len2 :
-		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
-		intersection = int(percentage_intersection*len2*.01)
-		#print intersection
-		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
-		for x in range(len1, len1+len2-int(intersection)):
-			pairs2.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
-	else :
-		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
-		intersection = int(percentage_intersection*len1*.01)
-		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
-		for x in range(len2+len1-intersection, len2, -1):
-			pairs1.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
-	#print pairs1
-	#print pairs2
+	db_input = generate_lists( len1, len2, percentage_intersection) 
+	pairs1 = db_input[0]
+	pairs2 = db_input[1]
+	intersection = db_input[2]
 	start = time()
 	size_iblt = (len1+len2- 2*intersection)*MUL_FACTOR
 	#print "size of IBLT", size_iblt
@@ -55,9 +64,9 @@ def make_iblt(len1, len2,percentage_intersection):
 	for key, value in pairs2:
         	t2.insert( t2.T, key, value )
 
-	#print t1.T
-	#print t2.T
-	t1.subtract(t1.T,t2.T)
+	print t1.T
+	print t2.T
+	print t1.subtract(t1.T,t2.T)
 	entries = t1.list_entries()
 	end = time()
 	return entries 
@@ -77,18 +86,10 @@ def full_db(len1, len2, percentage_intersection):
 
 	if percentage_intersection > 100 or percentage_intersection < 0:
 		raise NameError('Percentage should lie between 0 and 100 ')		
-	if len1 >= len2 :
-		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len1)]
-		intersection = int(percentage_intersection*len2*.01)
-		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
-		for x in range(len1, len1+len2-int(intersection)):
-			pairs2.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
-	else :
-		pairs2 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(len2)]
-		intersection = int(percentage_intersection*len1*.01)
-		pairs1 = [( hashlib.md5("key%d" % i).hexdigest(), hashlib.sha1("value%d" % i).hexdigest() ) for i in range(intersection)]
-		for x in range(len2, len2+len1-intersection):
-			pairs1.append(( hashlib.md5("key%d" % x).hexdigest(), hashlib.sha1("value%d" % x).hexdigest() ))
+	db_input = generate_lists( len1, len2, percentage_intersection) 
+	pairs1 = db_input[0]
+	pairs2 = db_input[1]
+	intersection = db_input[2]
 	start = time()
 	dict_a = {}
 
@@ -246,7 +247,9 @@ def test_bigDb():
 			result = full_db(db1, db2, percent)
 
 
-print verify_iblt_results(20,20,90)
+#print full_db(1,1,0)
+print make_iblt(1,0,0)
+#print verify_iblt_results(20,20,90)
 #print full_db(10, 10, 0)
 #test_bigDb()
 #testing_iblt_func()
