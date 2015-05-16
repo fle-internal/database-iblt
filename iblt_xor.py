@@ -37,9 +37,6 @@ class IBLT:
 	# and value is value to be hashed
 	hash = None
 
-	empty_key_array = None
-	empty_hash_sum_array = None
-
 	RESULT_GET_NO_MATCH = "no_match"
 	RESULT_GET_MATCH = "match"
 	RESULT_GET_DELETED_MATCH = "deleted_match"
@@ -47,17 +44,18 @@ class IBLT:
 	RESULT_LIST_ENTRIES_COMPLETE = "complete"
 	RESULT_LIST_ENTRIES_INCOMPLETE = "incomplete"
 
-	def __init__( self, m, k,hash=None ):
+	def __init__( self, m, k,T=None, hash=None):
 		self.m = m	
 		self.k = k
-		self.hash = hash if hash is not None else self.__hash
-
-		self.T = [[0,0,0,0] for i in range( m )]
-       		self.empty_key_array = 0 
-		self.empty_hash_sum_array = 0 
-
-	def _xor_tuple(self, T , tuple, operation):
+		self.hash = self.__hash
+		if T == None:	
+			self.T = [[0,0,0,0] for i in range( m )]
+		else :
+			self.T = deepcopy( T )
+		
+	def _xor_tuple(self, tuple, operation):
 		indices = set( [self.hash( i, tuple[0] ) for i in range( self.k ) ] )
+		T = self.T
 		for index in indices:
 			if operation == "insert" : 
 				# Increase count
@@ -69,11 +67,11 @@ class IBLT:
                         T[index][2] = T[index][2]^int(tuple[1], 16)
 			T[index][3] = T[index][3]^int(md5(tuple[0]), 16)
 		
-	def insert( self, T, tuple ):
-		self._xor_tuple(T, tuple, "insert")
+	def insert( self, tuple ):
+		self._xor_tuple(tuple, "insert")
 
-	def delete( self, T, tuple ):
-		self._xor_tuple(T, tuple, "delete")
+	def delete( self, tuple ):
+		self._xor_tuple(tuple, "delete")
 
 	def subtract_inplace (self, other_iblt):
 		for i in range(0, len(self.T)):
@@ -111,16 +109,14 @@ class IBLT:
 		where <Result> is either IBLT.RESULT_LIST_ENTRIES_COMPLETE to indicate that the list is complete,
 		or IBLT.RESULT_LIST_ENTRIES_INCOMPLETE to indicate that some entries couldn't be recovered
 		"""
-		T = deepcopy( self.T )
+		dummy = IBLT(self.m, self.k, self.T)
 		entries = []
 		deleted_entries = []
-		if len(T) == 0 :	
-			return ( IBLT.RESULT_LIST_ENTRIES_COMPLETE, entries, deleted_entries )
 		check = 1 
 		while check == 1 :	
 			check = 0	
-			for i in range( len( T ) ):
-				entry = T[i]
+			for i in range( len( dummy.T ) ):
+				entry = dummy.T[i]
 				if entry[0] == 1 or entry[0] == -1:
 					retrieved_tup = (format(entry[1], SIZE_KEY), format(entry[2], SIZE_VAL))
 					hashed_key = int(md5(retrieved_tup[0]), 16)  
@@ -129,15 +125,14 @@ class IBLT:
 							check = 1	
 							#raise NameError('The hashed key does not match the hash(key)')
 							entries.append(retrieved_tup)
-							self.delete(T, retrieved_tup)
-
+							dummy.delete(retrieved_tup)
 					elif entry[0] == -1 :
 						if entry[3] == hashed_key :
 							check = 1	
 							#raise NameError('The hashed key does not match the hash(key)')
 							deleted_entries.append(retrieved_tup)
-							self.insert(T, retrieved_tup)
-		if not self.is_empty() :
+							dummy.insert(retrieved_tup)
+		if not dummy.is_empty() :
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )
 		return ( IBLT.RESULT_LIST_ENTRIES_COMPLETE, entries, deleted_entries )
 

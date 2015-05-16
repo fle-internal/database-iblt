@@ -52,15 +52,14 @@ def make_iblt(len1, len2,percentage_intersection):
 		t2 = IBLT(size_iblt, MAX_HASH)
 
 	for tup in pairs1:
-	   	t1.insert( t1.T, tup)
+	   	t1.insert(tup)
 
 	for tup in pairs2:
-        	t2.insert( t2.T, tup)
+        	t2.insert(tup)
 
 	#print t1.T
 	#print t2.T
-	t1.subtract_inplace(t2.T)
-	#print t1.list_entries()	
+	print t1.subtract_inplace(t2.T)
 	end = time()
 	return t1.list_entries()
 
@@ -120,7 +119,7 @@ def creating_IBLT():
 def insert_IBLT():
 	t = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
-	t.insert( t.T, tup)
+	t.insert(tup)
 	# Check if the entry is inserted
 	assert not t1.is_empty() 
 	return t
@@ -128,15 +127,15 @@ def insert_IBLT():
 def list_entries_IBLT():
 	t = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
-	t.insert( t.T, tup)
+	t.insert(tup)
 	# Check if we are able to list the entries
 	assert t.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
 def delete_IBLT():
 	t = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
-	t.insert( t.T, tup)
-	t.delete( t.T, tup)
+	t.insert(tup)
+	t.delete(tup)
 	# Check if the entry is deleted
 	assert t.is_empty() 
 	# Check if the status is complete on retrieving entries from an empty IBLT 
@@ -145,7 +144,7 @@ def delete_IBLT():
 def subtract_aMinusB_IBLT():
 	t1 = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
-	t1.insert( t1.T, tup)
+	t1.insert(tup)
 	# Create a new empty IBLT
 	t2 = IBLT(2,2)
 	# Subtraction : t1-t2 (results in entries with positive count)
@@ -159,7 +158,7 @@ def subtract_aMinusB_IBLT():
 def delete_after_subtract_IBLT():
 	t = subtract_aMinusB_IBLT()
 	tup = (md5("key"), sha1("value"))
-	t.delete( t.T, tup)
+	t.delete(tup)
 	assert t.is_empty() 
 
 def subtract_bMinusA_IBLT():
@@ -167,7 +166,7 @@ def subtract_bMinusA_IBLT():
 	t1 = IBLT(2, 2)
 	t2 = IBLT(2,2)
 	tup = (md5("key"), sha1("value"))
-	t2.insert( t2.T, tup)
+	t2.insert(tup)
 	# Subtraction : results in entries with negative count
 	t1.subtract_inplace(t2.T)
 	# Check if we are able to get entries from the result of subtraction
@@ -179,7 +178,7 @@ def subtract_bMinusA_IBLT():
 def insert_after_subtract_IBLT():
 	t = subtract_bMinusA_IBLT()
 	tup = (md5("key"), sha1("value"))
-	t.insert( t.T, tup)
+	t.insert(tup)
 	assert t.is_empty() 
 
 @xfail(reason="unknown")
@@ -250,7 +249,7 @@ def test_bigDb():
 
 #print full_db(1,1,0)
 #print make_iblt(1,0,0)
-#print verify_iblt_results(10,10,100)
+print verify_iblt_results(1,0,0)
 #print full_db(10, 10, 0)
 #test_bigDb()
 #testing_iblt_func()
