@@ -5,6 +5,9 @@ from copy import deepcopy
 from time import time 
 import cProfile
 
+SIZE_KEY = 32
+SIZE_VAL = 40
+
 #Returns formatted string by removing 0x,L from ends and filling 0's if string smaller than size
 def format (str, size) :
 	return hex(str)[2:-1].zfill(size)
@@ -53,8 +56,8 @@ class IBLT:
        		self.empty_key_array = 0 
 		self.empty_hash_sum_array = 0 
 
-	def _xor_tuple(self, T , key, value, operation):
-		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
+	def _xor_tuple(self, T , tuple, operation):
+		indices = set( [self.hash( i, tuple[0] ) for i in range( self.k ) ] )
 		for index in indices:
 			if operation == "insert" : 
 				# Increase count
@@ -62,17 +65,17 @@ class IBLT:
 	 		elif operation == "delete" :
 				# Decrease count
 				T[index][0] -= 1
-		      	T[index][1] = T[index][1]^int(key, 16)
-                        T[index][2] = T[index][2]^int(value, 16)
-			T[index][3] = T[index][3]^int(md5(key), 16)
+		      	T[index][1] = T[index][1]^int(tuple[0], 16)
+                        T[index][2] = T[index][2]^int(tuple[1], 16)
+			T[index][3] = T[index][3]^int(md5(tuple[0]), 16)
 		
-	def insert( self, T, key, value ):
-		self._xor_tuple(T, key, value, "insert")
+	def insert( self, T, tuple ):
+		self._xor_tuple(T, tuple, "insert")
 
-	def delete( self, T, key, value ):
-		self._xor_tuple(T, key, value, "delete")
+	def delete( self, T, tuple ):
+		self._xor_tuple(T, tuple, "delete")
 
-	def subtract (self, other_iblt):
+	def subtract_inplace (self, other_iblt):
 		for i in range(0, len(self.T)):
 			self.T[i][0] = self.T[i][0] - other_iblt[i][0]
 			self.T[i][1] = self.T[i][1] ^ other_iblt[i][1]	
@@ -119,21 +122,21 @@ class IBLT:
 			for i in range( len( T ) ):
 				entry = T[i]
 				if entry[0] == 1 or entry[0] == -1:
-					retrieved_tup = (format(entry[1], 32), format(entry[2], 40))
+					retrieved_tup = (format(entry[1], SIZE_KEY), format(entry[2], SIZE_VAL))
 					hashed_key = int(md5(retrieved_tup[0]), 16)  
 					if entry[0] == 1 : 
 						if entry[3] == hashed_key :
 							check = 1	
 							#raise NameError('The hashed key does not match the hash(key)')
 							entries.append(retrieved_tup)
-							self.delete(T, retrieved_tup[0], retrieved_tup[1])
+							self.delete(T, retrieved_tup)
 
 					elif entry[0] == -1 :
 						if entry[3] == hashed_key :
 							check = 1	
 							#raise NameError('The hashed key does not match the hash(key)')
 							deleted_entries.append(retrieved_tup)
-							self.insert(T, retrieved_tup[0], retrieved_tup[1])
+							self.insert(T, retrieved_tup)
 		if not self.is_empty() :
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )
 		return ( IBLT.RESULT_LIST_ENTRIES_COMPLETE, entries, deleted_entries )

@@ -1,5 +1,3 @@
-#TODO : find the right multiplication factor - have increased it from 1.4 to 1.5 for now 
-
 import pytest
 import math
 import cProfile
@@ -53,25 +51,18 @@ def make_iblt(len1, len2,percentage_intersection):
 		t1 = IBLT(size_iblt, MAX_HASH)
 		t2 = IBLT(size_iblt, MAX_HASH)
 
-	for key, value in pairs1:
-	   	t1.insert( t1.T, key, value )
+	for tup in pairs1:
+	   	t1.insert( t1.T, tup)
 
-	for key, value in pairs2:
-        	t2.insert( t2.T, key, value )
+	for tup in pairs2:
+        	t2.insert( t2.T, tup)
 
-	print t1.T
-	print t2.T
-	print t1.subtract_inplace(t2.T)
-	print t1.list_entries()	
+	#print t1.T
+	#print t2.T
+	t1.subtract_inplace(t2.T)
+	#print t1.list_entries()	
 	end = time()
 	return t1.list_entries()
-
-# Returns the absolute value of the argument passed
-def abs(num):
-	if num < 0 :
-		return num*-1
-	else :
-		return num
 
 def full_db(len1, len2, percentage_intersection):
 
@@ -128,21 +119,24 @@ def creating_IBLT():
 
 def insert_IBLT():
 	t = IBLT(2, 2)
-	t.insert( t.T, md5("key"), sha1("value") )
+	tup = (md5("key"), sha1("value"))
+	t.insert( t.T, tup)
 	# Check if the entry is inserted
 	assert not t1.is_empty() 
 	return t
 
 def list_entries_IBLT():
 	t = IBLT(2, 2)
-	t.insert( t.T, md5("key"), sha1("value") )
+	tup = (md5("key"), sha1("value"))
+	t.insert( t.T, tup)
 	# Check if we are able to list the entries
 	assert t.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
 def delete_IBLT():
 	t = IBLT(2, 2)
-	t.insert( t.T, md5("key"), sha1("value") )
-	t.delete( t.T, md5("key"), sha1("value") )
+	tup = (md5("key"), sha1("value"))
+	t.insert( t.T, tup)
+	t.delete( t.T, tup)
 	# Check if the entry is deleted
 	assert t.is_empty() 
 	# Check if the status is complete on retrieving entries from an empty IBLT 
@@ -150,38 +144,42 @@ def delete_IBLT():
 
 def subtract_aMinusB_IBLT():
 	t1 = IBLT(2, 2)
-	t1.insert( t.T, md5("key"), sha1("value") )
+	tup = (md5("key"), sha1("value"))
+	t1.insert( t1.T, tup)
 	# Create a new empty IBLT
 	t2 = IBLT(2,2)
 	# Subtraction : t1-t2 (results in entries with positive count)
 	t1.subtract_inplace(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
-	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
+	assert t1.list_entries()[1] == tup
 	return t1
 
 #Check if deletion works after subtraction
 def delete_after_subtract_IBLT():
 	t = subtract_aMinusB_IBLT()
-	t.delete( t.T, md5("key"), sha1("value") )
+	tup = (md5("key"), sha1("value"))
+	t.delete( t.T, tup)
 	assert t.is_empty() 
 
 def subtract_bMinusA_IBLT():
 	# Create an empty IBLT
 	t1 = IBLT(2, 2)
 	t2 = IBLT(2,2)
-	t2.insert( t.T, md5("key"), sha1("value") )
+	tup = (md5("key"), sha1("value"))
+	t2.insert( t2.T, tup)
 	# Subtraction : results in entries with negative count
 	t1.subtract_inplace(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
-	assert t1.list_entries()[1] == (md5("key"), sha1("value"))
+	assert t1.list_entries()[1] == tup
 	return t1
 
 #Check if insertion works after subtraction
 def insert_after_subtract_IBLT():
 	t = subtract_bMinusA_IBLT()
-	t.insert( t.T, md5("key"), sha1("value") )
+	tup = (md5("key"), sha1("value"))
+	t.insert( t.T, tup)
 	assert t.is_empty() 
 
 @xfail(reason="unknown")
@@ -252,7 +250,7 @@ def test_bigDb():
 
 #print full_db(1,1,0)
 #print make_iblt(1,0,0)
-print verify_iblt_results(10,10,100)
+#print verify_iblt_results(10,10,100)
 #print full_db(10, 10, 0)
 #test_bigDb()
 #testing_iblt_func()
