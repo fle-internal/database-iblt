@@ -12,11 +12,38 @@ MUL_FACTOR = 2
 MAX_HASH = 4
 IBLT_FRAC = 0.3
 
-# Third argument is the percentage of smaller set which intersects with the larger one
-def generate_lists (size_db1, size_db2, percentage_intersection, seed):
+def make_lists(key, value, seed, limit) :
+	"""
+	Generate list of tuples till the limit	
+	"""
+	return [( md5(seed+key+"%d" % i), sha1(seed+value+"%d" % i)) for i in range(limit)]
+
+def generate_lists_SameKey (size_db1, size_db2, percentage_intersection, seed, sameKey):
+	"""
+	Returns list of tuples for database1 and database2, according to the 
+	percentage intersection(of smaller database) and sameKey are the number of entries
+	having same keys but different values in both the databases
+	"""
+	lists = generate_db_lists (size_db1, size_db2, percentage_intersection, seed)
+	sameKey_db1 = make_lists("samekey", "db1_value", seed, sameKey)
+	sameKey_db2 = make_lists("samekey", "db2_value", seed, sameKey)
+	lists[0].extend(sameKey_db1)
+	lists[1].extend(sameKey_db2)
+	print lists[0]
+	print lists[1]
+	return (lists[0], lists[1], lists[2])
+
+
+def generate_db_lists (size_db1, size_db2, percentage_intersection, seed):
+	"""
+	Returns list of tuples for database1 and database2, according to the 
+	percentage intersection(of smaller database)
+	"""
+	if percentage_intersection > 100 or percentage_intersection < 0:
+		raise NameError('Percentage should lie between 0 and 100 ')		
 	intersection = int(percentage_intersection * min(size_db1, size_db2) * .01)
 	total = size_db1 + size_db2 - intersection
-	dataset = [( md5(seed+"key%d" % i), sha1(seed+"value%d" % i)) for i in range(total)]
+	dataset = make_lists("key", "value", seed, total)
 	if size_db1 >= size_db2 :
 		pairs1 = dataset[0:size_db1]
 		pairs2 = dataset[size_db1-intersection:total]
@@ -28,18 +55,14 @@ def generate_lists (size_db1, size_db2, percentage_intersection, seed):
 	return (pairs1, pairs2, intersection)
 
 xfail = pytest.mark.xfail
-# Returning list after subtraction and not the time taken
-# Third argument is the percentage of smaller set which intersects which the larger one
-def make_iblt(len1, len2,percentage_intersection):
 
-	if percentage_intersection > 100 or percentage_intersection < 0:
-		raise NameError('Percentage should lie between 0 and 100 ')		
-	db_input = generate_lists( len1, len2, percentage_intersection, "") 
-	pairs1 = db_input[0]
-	pairs2 = db_input[1]
-	intersection = db_input[2]
+def make_iblt(pairs1, pairs2,intersection):
+	"""
+ 	Returning list of database entries after subtraction
+ 	Third argument is the number of entries that are common in both databases
+	"""
 	start = time()
-	size_iblt = int(math.ceil((len1+len2- 2*intersection)*MUL_FACTOR))
+	size_iblt = int(math.ceil((len(pairs1)+len(pairs2)- 2*intersection)*MUL_FACTOR))
 	#print "size of IBLT", size_iblt
 	if size_iblt == 0:
 		t1 = IBLT(1, 1)
@@ -63,21 +86,13 @@ def make_iblt(len1, len2,percentage_intersection):
 	end = time()
 	return t1.list_entries()
 
-def full_db(len1, len2, percentage_intersection):
+def full_db(pairs1, pairs2, intersection):
 
 	"""
-	Calculates the set difference by sending full database instead of IBLT
+	Calculates database difference by sending full database instead of IBLT
 	Assuming that the dbs given to us are not in the form of dictionaries, we create 2 dictionaries
 	insert values and then find out the difference between them 
-	Third argument is the percentage of smaller set which intersects which the larger one
 	"""
-
-	if percentage_intersection > 100 or percentage_intersection < 0:
-		raise NameError('Percentage should lie between 0 and 100 ')		
-	db_input = generate_lists( len1, len2, percentage_intersection, "") 
-	pairs1 = db_input[0]
-	pairs2 = db_input[1]
-	intersection = db_input[2]
 	start = time()
 	dict_a = dict(pairs1)
 	dict_b = dict(pairs2)
@@ -98,25 +113,34 @@ def full_db(len1, len2, percentage_intersection):
 	return (entries, deleted_entries)
 
 
-def verify_iblt_results(db1, db2, percentage_intersection) :
-	results_iblt = make_iblt(db1, db2, percentage_intersection)
-	results_full_db = full_db(db1, db2, percentage_intersection)
+def verify_iblt_results(db1, db2, intersection) :
+	"""
+	Generating IBLT and comparing the results with full db approach
+	"""
+	results_iblt = make_iblt(db1, db2, intersection)
+	results_full_db = full_db(db1, db2, intersection)
 	if results_iblt[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE: 
-		results_iblt[1].sort(key=lambda tup: tup[0]) 
-		results_iblt[2].sort(key=lambda tup: tup[0]) 
-		results_full_db[0].sort(key=lambda tup: tup[0]) 
-		results_full_db[1].sort(key=lambda tup: tup[0]) 
+		results_iblt[1].sort()
+		results_iblt[2].sort()
+		results_full_db[0].sort()
+		results_full_db[1].sort()
 		if results_iblt[1] == results_full_db[0] and results_iblt[2] == results_full_db[1]:
 			return 1
-		else : 
+		else :		
 			return 0
 
 def creating_IBLT():
+	"""
+	Creating IBLT and checking if it is empty
+	"""
 	t = IBLT(2, 2)
 	# IBLT created should be empty
 	assert t.is_empty() 
 
 def insert_IBLT():
+	"""
+	Checking insertion(of a tuple) in IBLT
+	"""
 	t = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
 	t.insert(tup)
@@ -125,6 +149,9 @@ def insert_IBLT():
 	return t
 
 def list_entries_IBLT():
+	"""
+	Checking listing entries from IBLT
+	"""	
 	t = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
 	t.insert(tup)
@@ -132,6 +159,9 @@ def list_entries_IBLT():
 	assert t.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
 def delete_IBLT():
+	"""
+	Checking deletion of a tuple from IBLT
+	"""
 	t = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
 	t.insert(tup)
@@ -142,6 +172,9 @@ def delete_IBLT():
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
 def subtract_aMinusB_IBLT():
+	"""
+	Checking subtraction of 2 IBLTs
+	"""
 	t1 = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
 	t1.insert(tup)
@@ -247,16 +280,12 @@ def test_bigDb():
 			result = full_db(db1, db2, percent)
 
 
-#print full_db(1,1,0)
-#print make_iblt(1,0,0)
-print verify_iblt_results(1,0,0)
-#print full_db(10, 10, 0)
+results = generate_lists_SameKey (1, 1, 100, "", 1)
+print verify_iblt_results(results[0], results[1], results[2])
 #test_bigDb()
 #testing_iblt_func()
 #db2_subsetOf_db1()
-#print make_iblt(60,60,90)
 #test()
-
 
 if (sys.argv[0] == "pytest_v1.py") and (len(sys.argv) > 2) :
 	#assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
