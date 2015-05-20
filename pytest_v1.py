@@ -29,8 +29,8 @@ def generate_lists_SameKey (size_db1, size_db2, percentage_intersection, seed, s
 	sameKey_db2 = make_lists("samekey", "db2_value", seed, sameKey)
 	lists[0].extend(sameKey_db1)
 	lists[1].extend(sameKey_db2)
-	print lists[0]
-	print lists[1]
+	#print lists[0]
+	#print lists[1]
 	return (lists[0], lists[1], lists[2])
 
 
@@ -100,10 +100,10 @@ def full_db(pairs1, pairs2, intersection):
 	dict_b_minus_a = {}
 
 	for key in dict_a :
-		if not(dict_b.has_key(key)):
+		if not(dict_b.has_key(key) and dict_b[key] == dict_a[key]):
 			dict_a_minus_b.update({key:dict_a[key]})	
 	for key in dict_b :
-		if not(dict_a.has_key(key)):
+		if not(dict_a.has_key(key) and dict_b[key] == dict_a[key]):
 			dict_b_minus_a.update({key:dict_b[key]}) 
 	end = time()
 	# Converting dictionary to lists
@@ -118,7 +118,9 @@ def verify_iblt_results(db1, db2, intersection) :
 	Generating IBLT and comparing the results with full db approach
 	"""
 	results_iblt = make_iblt(db1, db2, intersection)
+	print results_iblt
 	results_full_db = full_db(db1, db2, intersection)
+	print results_full_db
 	if results_iblt[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE: 
 		results_iblt[1].sort()
 		results_iblt[2].sort()

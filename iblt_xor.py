@@ -33,8 +33,8 @@ class IBLT:
 	m = None
 	# k is amount of hash functions
 	k = None
-	# hash is function( i, value ), where i is index of hash function
-	# and value is value to be hashed
+	# hash is function( i, tuple) where i is index of hash function
+	# and tuple is key-value pair to be hashed
 	hash = None
 
 	RESULT_GET_NO_MATCH = "no_match"
@@ -54,7 +54,7 @@ class IBLT:
 			self.T = deepcopy( T )
 		
 	def _xor_tuple(self, tuple, operation):
-		indices = set( [self.hash( i, tuple[0] ) for i in range( self.k ) ] )
+		indices = set( [self.hash( i, tuple ) for i in range( self.k ) ] )
 		T = self.T
 		for index in indices:
 			if operation == "insert" : 
@@ -80,28 +80,7 @@ class IBLT:
 			self.T[i][2] = self.T[i][2] ^ other_iblt[i][2]
 			self.T[i][3] = self.T[i][3] ^ other_iblt[i][3]
 	        return self.T	
-
-	def get( self, key ):
-		"""
-		Try to get a value from the table with the given key.
-		This function can return four different responses:
-		( IBLT.RESULT_GET_NO_MATCH, None ): The key was definitively not in the table
-		( IBLT.RESULT_GET_MATCH, <Value> ): The key was in the table and the value is returned
-		( IBLT.RESULT_GET_DELETED_MATCH, <Value> ): The key was deleted without being inserted
-		( IBLT.RESULT_GET_INCONCLUSIVE, None ): It couldn't be determined if the key was in the table or not
-		"""
-		indices = set( [self.hash( i, key ) for i in range( self.k ) ] )
-		for index in indices:
-			if self.T[index][0] == 0 and self.T[index][1] == 0 and self.T[index][3] == 0:  
-				return ( IBLT.RESULT_GET_NO_MATCH, None )
-			elif self.T[index][0] == 1 and self.T[index][1] == key and \
-					self.T[index][3] == md5(key):
-				return ( IBLT.RESULT_GET_MATCH, self.T[index][2] )
-			elif self.T[index][0] == -1 and self.T[index][1] == key and \
-                			self.T[index][3] == md5(key):
-				return ( IBLT.RESULT_GET_DELETED_MATCH, self.T[index][2] )
-		return ( IBLT.RESULT_GET_INCONCLUSIVE, None )
-
+	
 	def list_entries( self ):
 		"""
 		Tries to list all entries in the table.
@@ -112,26 +91,24 @@ class IBLT:
 		dummy = IBLT(self.m, self.k, self.T)
 		entries = []
 		deleted_entries = []
-		check = 1 
-		while check == 1 :	
-			check = 0	
+		while True:	
 			for i in range( len( dummy.T ) ):
 				entry = dummy.T[i]
 				if entry[0] == 1 or entry[0] == -1:
 					retrieved_tup = (format(entry[1], SIZE_KEY), format(entry[2], SIZE_VAL))
 					hashed_key = int(md5(retrieved_tup[0]), 16)  
-					if entry[0] == 1 : 
-						if entry[3] == hashed_key :
-							check = 1	
-							#raise NameError('The hashed key does not match the hash(key)')
-							entries.append(retrieved_tup)
-							dummy.delete(retrieved_tup)
-					elif entry[0] == -1 :
-						if entry[3] == hashed_key :
-							check = 1	
-							#raise NameError('The hashed key does not match the hash(key)')
-							deleted_entries.append(retrieved_tup)
-							dummy.insert(retrieved_tup)
+					if entry[0] == 1 and entry[3] == hashed_key: 
+						#raise NameError('The hashed key does not match the hash(key)')
+						entries.append(retrieved_tup)
+						dummy.delete(retrieved_tup)
+						break 
+					elif entry[0] == -1 and entry[3] == hashed_key:
+						#raise NameError('The hashed key does not match the hash(key)')
+						deleted_entries.append(retrieved_tup)
+						dummy.insert(retrieved_tup)
+						break
+			else :
+				break
 		if not dummy.is_empty() :
 			return ( IBLT.RESULT_LIST_ENTRIES_INCOMPLETE, entries, deleted_entries )
 		return ( IBLT.RESULT_LIST_ENTRIES_COMPLETE, entries, deleted_entries )
@@ -218,15 +195,17 @@ class IBLT:
 		result += self.m * ( 4 + self.key_size + self.value_size + self.hash_key_sum_size )
 		return result
 
+	def __int_of_fracStr(self, tup, low, high) :
+		return (int(tup[0][low:high], 16)^int(tup[1][low:high], 16))% self.m
 
 	# Assuming there are no more than 4 hash functions, according to the paper
-	def __hash(self, i, value) :
+	def __hash(self, i, tup) :
 		if i == 0 :
-			return int(value[0:8], 16)%self.m
+			return self.__int_of_fracStr(tup, 0, 8)
 		elif i == 1 :
-			return int(value[8:16], 16)%self.m
+			return self.__int_of_fracStr(tup, 8, 16)
 		elif i == 2 :
-			return int(value[16:24], 16)%self.m
+			return self.__int_of_fracStr(tup, 16, 24)
 		else :
-			return int(value[24:32], 16)%self.m
+			return self.__int_of_fracStr(tup, 24, 32)
 
