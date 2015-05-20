@@ -17,12 +17,14 @@ def make_lists(key, value, seed, limit) :
 	"""
 	return [( md5(seed+key+"%d" % i), sha1(seed+value+"%d" % i)) for i in range(limit)]
 
-def generate_lists_SameKey (size_db1, size_db2, percentage_intersection, seed, sameKey):
+def generate_lists_SameKey (size_db1, size_db2, percentage_intersection, sameKey, seed=None):
 	"""
 	Returns list of tuples for database1 and database2, according to the 
 	percentage intersection(of smaller database) and sameKey are the number of entries
 	having same keys but different values in both the databases
-	"""
+	""" 
+	if seed == None:
+		seed = ""
 	lists = generate_db_lists (size_db1, size_db2, percentage_intersection, seed)
 	sameKey_db1 = make_lists("samekey", "db1_value", seed, sameKey)
 	sameKey_db2 = make_lists("samekey", "db2_value", seed, sameKey)
@@ -33,11 +35,13 @@ def generate_lists_SameKey (size_db1, size_db2, percentage_intersection, seed, s
 	return (lists[0], lists[1], lists[2])
 
 
-def generate_db_lists (size_db1, size_db2, percentage_intersection, seed):
+def generate_db_lists (size_db1, size_db2, percentage_intersection, seed=None):
 	"""
 	Returns list of tuples for database1 and database2, according to the 
 	percentage intersection(of smaller database)
 	"""
+	if seed == None:
+		seed = ""
 	if percentage_intersection > 100 or percentage_intersection < 0:
 		raise NameError('Percentage should lie between 0 and 100 ')		
 	intersection = int(percentage_intersection * min(size_db1, size_db2) * .01)
@@ -52,8 +56,6 @@ def generate_db_lists (size_db1, size_db2, percentage_intersection, seed):
 	#print "pairs1", pairs1
 	#print "pairs2", pairs2
 	return (pairs1, pairs2, intersection)
-
-xfail = pytest.mark.xfail
 
 def make_iblt(pairs1, pairs2,intersection):
 	"""
@@ -81,7 +83,7 @@ def make_iblt(pairs1, pairs2,intersection):
 
 	#print t1.T
 	#print t2.T
-	print t1.subtract_inplace(t2.T)
+	t1.subtract_inplace(t2.T)
 	end = time()
 	return t1.list_entries()
 
@@ -117,9 +119,9 @@ def verify_iblt_results(db1, db2, intersection) :
 	Generating IBLT and comparing the results with full db approach
 	"""
 	results_iblt = make_iblt(db1, db2, intersection)
-	print results_iblt
+	#print results_iblt
 	results_full_db = full_db(db1, db2, intersection)
-	print results_full_db
+	#print results_full_db
 	if results_iblt[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE: 
 		results_iblt[1].sort()
 		results_iblt[2].sort()
@@ -215,87 +217,59 @@ def test_bMinusA_IBLT():
 	return t1
 
 def test_insert_after_subtract_IBLT():
+        """
+        Check if insertion works after subtraction bMinusA
+        """
+        t = test_bMinusA_IBLT()
+        tup = (md5("key"), sha1("value"))
+        t.insert(tup)
+        assert t.is_empty()
+
+def test_db1_subsetOf_db2():
 	"""
-	Check if insertion works after subtraction bMinusA
+	If db1 is a subset of db2, db2=db1 not handled in this testcase
 	"""
-	t = test_bMinusA_IBLT()
-	tup = (md5("key"), sha1("value"))
-	t.insert(tup)
-	assert t.is_empty() 
+        #Since db2 is a subset and is the smaller among the 2 databses
+        percentage_intersection = 100
+	start_range = 40
+        for size_db2 in range(start_range, start_range+10, 1):
+                for size_db1 in range(start_range, size_db2, 1):
+                        lists=generate_db_lists (size_db1, size_db2, percentage_intersection, "db1subsetdb2")
+                        assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, "size_db1 %d size_db2 %d" %(size_db1, size_db2)
+	
+# Always fails for (18,10), (28,20), (38,30) etc
+def test_db2_subsetOf_db1():
+        """
+        If db2 is a subset of db1, db2=db1 not handled in this testcase
+        """
+        #Since db2 is a subset and is the smaller among the 2 databses
+        percentage_intersection = 100
+	start_range = 40
+        for size_db1 in range(start_range, start_range+10, 1):
+                for size_db2 in range(start_range, size_db1, 1):
+                        lists=generate_db_lists (size_db1, size_db2, percentage_intersection, "db2subsetdb1")
+                        assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, "size_db1 %d size_db2 %d" %(size_db1, size_db2)
 
-
-"""
-@xfail(reason="unknown")
-#If db1 and db2 have some intersection
-def test(): 
-	for percent in range(0, 110, 10):
-		for db1 in range(10, 100, 10):
-			for db2 in range(10, 100, 10):
-				# If the difference between databses is lesser than 30% of the larger database then go with the IBLT approach
-				intersection = int(min(db1,db2)*percent*.01)	
-				if (int(max(db1, db2)* IBLT_FRAC) >= db1+db2-2*intersection):
-					#print "IBLT db1 db2 percent intersection ", db1, db2, percent ,intersection
-					#result = make_iblt(db1,db2,percent)
-					#if result[0] != IBLT.RESULT_LIST_ENTRIES_COMPLETE:
-					#	print db1, db2, percent 
-					#assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
-					assert verify_iblt_results(db1, db2, percent) == 1
-				else:
-					#print "full DB", db1, db2, percent, intersection
-					result = full_db(db1, db2, percent)
-
-
-@xfail(reason="unknown")
-#If db2 is a subset of db1, db2=db1 not handled in this testcase
-def db2_subsetOf_db1():
-	for db1 in range(10, 100, 1):
-		for db2 in range(10, db1, 1):
-			intersection = db2
-			if (int(db1* IBLT_FRAC) >= db1-db2):
-				assert verify_iblt_results(db1, db2, 100) == 1
-				#assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
-			else:
-				result = full_db(db1, db2,100)
-
-
-@xfail(reason="unknown")
-#If db1 is a subset of db2, db2=db1 not handled in this testcase
-def db1_subsetOf_db2():
-	for db2 in range(10, 100, 1):
-		for db1 in range(10, db2, 1):
-			intersection = db1
-			if (int(db2*IBLT_FRAC) >= db2-db1):
-				assert verify_iblt_results(db1, db2, 100) == 1	
-				#assert make_iblt(db1, db2, 100)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
-			else:
-				result = full_db(db1, db2,100)
-
-
-#Check if the big databases work well
+#Fails at 99.6 for 1.4 and succeeds if IBLT is 2 times the size of difference
 def test_bigDb(): 
-	db1 = 10000
-	db2 = 10000
-	for percent in range(990, 1000, 1):
-		# If the difference between databses is lesser than 30% of the larger database then go with the IBLT approach
-		percent = percent * .1
-		intersection = int(min(db1,db2)*percent*.01)	
-		if (int(max(db1, db2)* IBLT_FRAC) >= db1+db2-2*intersection):
-			print "IBLT db1 db2 percent intersection ", db1, db2, percent ,intersection
-			#result = make_iblt(db1,db2,percent)
-			#if result[0] != IBLT.RESULT_LIST_ENTRIES_COMPLETE:
-			#	print db1, db2, percent 
-			#assert make_iblt(db1, db2, percent)[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
-			assert verify_iblt_results(db1, db2, percent) == 1
-		else:
-			print "full DB", db1, db2, percent, intersection
-			result = full_db(db1, db2, percent)
+	"""
+	Check if the big databases work well
+	"""		
+	size_db1 = 10000
+	size_db2 = 10000
+	for percent_intersection in range(990, 1000, 1):
+		percent_intersection = percent_intersection * .1
+		lists=generate_db_lists (size_db1, size_db2, percent_intersection, "bigDb")
+		assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, "percent intersection %f" %(percent_intersection)
 
 
-results = generate_lists_SameKey (1, 1, 100, "", 1)
-print verify_iblt_results(results[0], results[1], results[2])
-#test_bigDb()
-#testing_iblt_func()
-#db2_subsetOf_db1()
-#test()
-
-"""
+def test(): 
+	"""
+	db1 and db2 have some intersection
+	"""
+	for percent_intersection in range(0, 110, 10):
+		for size_db1 in range(10, 100, 10):
+			for size_db2 in range(10, 100, 10):
+				lists=generate_db_lists (size_db1, size_db2, percent_intersection, "test")
+				assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, \
+					"size_db1 %d size_db2 %d percent intersection %f" %(size_db1, size_db2, percent_intersection)
