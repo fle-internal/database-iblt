@@ -4,7 +4,6 @@ import cProfile
 import hashlib
 import sys 
 
-from iblt_xor import IBLT
 from time import time
 from iblt_xor import *
 
@@ -127,11 +126,10 @@ def verify_iblt_results(db1, db2, intersection) :
 		results_full_db[0].sort()
 		results_full_db[1].sort()
 		if results_iblt[1] == results_full_db[0] and results_iblt[2] == results_full_db[1]:
-			return 1
+			return True
 		else :		
-			return 0
-
-def creating_IBLT():
+			return False
+def test_creating_IBLT():
 	"""
 	Creating IBLT and checking if it is empty
 	"""
@@ -139,7 +137,7 @@ def creating_IBLT():
 	# IBLT created should be empty
 	assert t.is_empty() 
 
-def insert_IBLT():
+def test_insert_IBLT():
 	"""
 	Checking insertion(of a tuple) in IBLT
 	"""
@@ -147,10 +145,10 @@ def insert_IBLT():
 	tup = (md5("key"), sha1("value"))
 	t.insert(tup)
 	# Check if the entry is inserted
-	assert not t1.is_empty() 
+	assert not t.is_empty() 
 	return t
 
-def list_entries_IBLT():
+def test_list_entries_IBLT():
 	"""
 	Checking listing entries from IBLT
 	"""	
@@ -160,7 +158,7 @@ def list_entries_IBLT():
 	# Check if we are able to list the entries
 	assert t.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
-def delete_IBLT():
+def test_delete_IBLT():
 	"""
 	Checking deletion of a tuple from IBLT
 	"""
@@ -171,11 +169,12 @@ def delete_IBLT():
 	# Check if the entry is deleted
 	assert t.is_empty() 
 	# Check if the status is complete on retrieving entries from an empty IBLT 
-	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
+	assert t.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
 
-def subtract_aMinusB_IBLT():
+def test_aMinusB_IBLT():
 	"""
-	Checking subtraction of 2 IBLTs
+	Subtract an empty IBLT from an IBLT with one entry and check if we 
+	are able to retrieve this entry using list_entries() after subtraction
 	"""
 	t1 = IBLT(2, 2)
 	tup = (md5("key"), sha1("value"))
@@ -186,17 +185,23 @@ def subtract_aMinusB_IBLT():
 	t1.subtract_inplace(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
-	assert t1.list_entries()[1] == tup
+	assert t1.list_entries()[1][0] == tup
 	return t1
 
-#Check if deletion works after subtraction
-def delete_after_subtract_IBLT():
-	t = subtract_aMinusB_IBLT()
+def test_delete_after_subtract_IBLT():
+	"""
+	Check if deletion works after subtraction aMinusB
+	"""
+	t = test_aMinusB_IBLT()
 	tup = (md5("key"), sha1("value"))
 	t.delete(tup)
 	assert t.is_empty() 
 
-def subtract_bMinusA_IBLT():
+def test_bMinusA_IBLT():
+	"""
+	Subtract an IBLT with one entry from an empty IBLT and check if we 
+	are able to retrieve this entry using list_entries() after subtraction
+	"""
 	# Create an empty IBLT
 	t1 = IBLT(2, 2)
 	t2 = IBLT(2,2)
@@ -206,16 +211,20 @@ def subtract_bMinusA_IBLT():
 	t1.subtract_inplace(t2.T)
 	# Check if we are able to get entries from the result of subtraction
 	assert t1.list_entries()[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE 
-	assert t1.list_entries()[1] == tup
+	assert t1.list_entries()[2][0] == tup
 	return t1
 
-#Check if insertion works after subtraction
-def insert_after_subtract_IBLT():
-	t = subtract_bMinusA_IBLT()
+def test_insert_after_subtract_IBLT():
+	"""
+	Check if insertion works after subtraction bMinusA
+	"""
+	t = test_bMinusA_IBLT()
 	tup = (md5("key"), sha1("value"))
 	t.insert(tup)
 	assert t.is_empty() 
 
+
+"""
 @xfail(reason="unknown")
 #If db1 and db2 have some intersection
 def test(): 
@@ -289,9 +298,4 @@ print verify_iblt_results(results[0], results[1], results[2])
 #db2_subsetOf_db1()
 #test()
 
-if (sys.argv[0] == "pytest_v1.py") and (len(sys.argv) > 2) :
-	#assert make_iblt(int(sys.argv[1]), int(sys.argv[2]))[0] == IBLT.RESULT_LIST_ENTRIES_COMPLETE
-	assert verify_iblt_results(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3])) == 1
-
-
-
+"""
