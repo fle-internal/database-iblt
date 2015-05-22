@@ -1,27 +1,37 @@
 import hashlib, math, struct
 import sys 
 import re
+import cProfile
+import json
+
 from copy import deepcopy
 from time import time 
-import cProfile
 
 SIZE_KEY = 32
 SIZE_VAL = 40
 
-#Returns formatted string by removing 0x,L from ends and filling 0's if string smaller than size
 def format (str, size) :
+	"""
+	Returns formatted string by removing 0x,L from ends and filling 0's if string smaller than size
+	"""
 	return hex(str)[2:-1].zfill(size)
 
-#Return the hex representation of a string's md5 encryption
 def md5 (str) :
+	"""
+	Returns the hex representation of a string's md5 encryption
+	"""
 	return hashlib.md5(str).hexdigest()
 
-#Return the hex representation of a string's sha1 encryption
 def sha1 (str) :
+	"""
+	Returns the hex representation of a string's sha1 encryption
+	"""	
 	return hashlib.sha1(str).hexdigest()
 
-#Assuming that the string supplied has an even length
 def hex_string_to_ascii (hex_string) :
+	"""
+	Returns ASCII representation of the hex value, assuming lengh supplied is even
+	"""	
 	list_char = []
 	for i in range(0, len(hex_string),2) :
 		list_char.append(chr(hex_string[i:i+2]))	
@@ -33,9 +43,6 @@ class IBLT:
 	m = None
 	# k is amount of hash functions
 	k = None
-	# hash is function( i, tuple) where i is index of hash function
-	# and tuple is key-value pair to be hashed
-	hash = None
 
 	RESULT_GET_NO_MATCH = "no_match"
 	RESULT_GET_MATCH = "match"
@@ -44,17 +51,36 @@ class IBLT:
 	RESULT_LIST_ENTRIES_COMPLETE = "complete"
 	RESULT_LIST_ENTRIES_INCOMPLETE = "incomplete"
 
-	def __init__( self, m, k,T=None, hash=None):
+	def __init__( self, m, k,T=None):
 		self.m = m	
 		self.k = k
-		self.hash = self.__hash
 		if T == None:	
 			self.T = [[0,0,0,0] for i in range( m )]
 		else :
 			self.T = deepcopy( T )
 		
+	def __int_of_fracStr(self, tup, low, high) :
+		return (int(tup[0][low:high], 16)^int(tup[1][low:high], 16))% self.m
+
+	def __hash(self, i, tup) :
+		"""
+		hash( i, tuple) where i is index of hash function, tuple is key-value pair to be hashed
+		Assuming there are no more than 4 hash functions, according to the paper
+		"""
+		if i == 0 :
+			return self.__int_of_fracStr(tup, 0, 8)
+		elif i == 1 :
+			return self.__int_of_fracStr(tup, 8, 16)
+		elif i == 2 :
+			return self.__int_of_fracStr(tup, 16, 24)
+		else :
+			return self.__int_of_fracStr(tup, 24, 32)
+
 	def _xor_tuple(self, tuple, operation):
-		indices = set( [self.hash( i, tuple ) for i in range( self.k ) ] )
+		"""
+		helper function for insert and delete functions	
+		"""
+		indices = set( [self.__hash( i, tuple ) for i in range( self.k ) ] )
 		T = self.T
 		for index in indices:
 			if operation == "insert" : 
@@ -68,9 +94,15 @@ class IBLT:
 			T[index][3] = T[index][3]^int(md5(tuple[0]), 16)
 		
 	def insert( self, tuple ):
+		"""
+		Insert the tuple into IBLT	
+		"""
 		self._xor_tuple(tuple, "insert")
 
 	def delete( self, tuple ):
+		"""
+		Delete the tuple from IBLT	
+		"""
 		self._xor_tuple(tuple, "delete")
 
 	def subtract_inplace (self, other_iblt):
@@ -98,12 +130,10 @@ class IBLT:
 					retrieved_tup = (format(entry[1], SIZE_KEY), format(entry[2], SIZE_VAL))
 					hashed_key = int(md5(retrieved_tup[0]), 16)  
 					if entry[0] == 1 and entry[3] == hashed_key: 
-						#raise NameError('The hashed key does not match the hash(key)')
 						entries.append(retrieved_tup)
 						dummy.delete(retrieved_tup)
 						break 
 					elif entry[0] == -1 and entry[3] == hashed_key:
-						#raise NameError('The hashed key does not match the hash(key)')
 						deleted_entries.append(retrieved_tup)
 						dummy.insert(retrieved_tup)
 						break
@@ -122,6 +152,33 @@ class IBLT:
 
 	def serialize( self ):
 		"""
+		Create json object for sending, include the magic bytes and the name of the json file?	
+		"""
+		dummy_dict = {}	
+		dummy_dict["Metadata"] = [self.m, self.k]
+		dummy_dict["IBLT"] = self.T
+		dummy_dict = json.dumps(dummy_dict)
+		f = open('iblt.json','w')
+		f.write(dummy_dict)
+		f.close()
+		#print dummy_dict
+
+	def unserialize ( self ) :
+		"""
+		Retrieve IBLT and its metadata from received json file
+		"""
+		students_list = []
+		with open("iblt.json") as json_file:
+    			json_data = json.load(json_file)
+    			#print self.m, self.k, json_data["Metadata"][0], json_data["Metadata"][1]	
+			if self.m != json_data["Metadata"][0] :
+				raise NameError('Size of IBLT does not match self\'s IBLT')
+    			elif self.k != json_data["Metadata"][1] :
+				raise NameError('Number of hash functions in the second IBLT does not match self\'s IBLT')
+			return json_data["IBLT"]
+
+	"""
+	def serialize( self ):
 		Serialize the IBLT for storage or transfer.
 		Data format:
 			[ Magic bytes ][  Header ][ Data ]
@@ -141,7 +198,6 @@ class IBLT:
 			For each of the m cells:
 				[ 	Count 	 ][ keySum ][ valueSum ][ hashKeySum ][ valueKeySum ]
 				  32-bit int
-		"""
 		magic = struct.pack( ">I", 0x49424C54 )
 		header = struct.pack( ">IIIIII", self.m, self.key_size, self.value_size, 
 										 self.hash_key_sum_size, 0, self.k )
@@ -195,17 +251,4 @@ class IBLT:
 		result += self.m * ( 4 + self.key_size + self.value_size + self.hash_key_sum_size )
 		return result
 
-	def __int_of_fracStr(self, tup, low, high) :
-		return (int(tup[0][low:high], 16)^int(tup[1][low:high], 16))% self.m
-
-	# Assuming there are no more than 4 hash functions, according to the paper
-	def __hash(self, i, tup) :
-		if i == 0 :
-			return self.__int_of_fracStr(tup, 0, 8)
-		elif i == 1 :
-			return self.__int_of_fracStr(tup, 8, 16)
-		elif i == 2 :
-			return self.__int_of_fracStr(tup, 16, 24)
-		else :
-			return self.__int_of_fracStr(tup, 24, 32)
-
+	"""

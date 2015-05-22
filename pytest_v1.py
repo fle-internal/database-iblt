@@ -64,7 +64,6 @@ def make_iblt(pairs1, pairs2,intersection):
 	"""
 	start = time()
 	size_iblt = int(math.ceil((len(pairs1)+len(pairs2)- 2*intersection)*MUL_FACTOR))
-	#print "size of IBLT", size_iblt
 	if size_iblt == 0:
 		t1 = IBLT(1, 1)
 		t2 = IBLT(1, 1)
@@ -83,8 +82,10 @@ def make_iblt(pairs1, pairs2,intersection):
 
 	#print t1.T
 	#print t2.T
-	t1.subtract_inplace(t2.T)
+	print t1.subtract_inplace(t2.T)
 	end = time()
+	#print t1.serialize()
+	#print t1.unserialize()
 	return t1.list_entries()
 
 def full_db(pairs1, pairs2, intersection):
@@ -273,3 +274,7 @@ def test():
 				lists=generate_db_lists (size_db1, size_db2, percent_intersection, "test")
 				assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, \
 					"size_db1 %d size_db2 %d percent intersection %f" %(size_db1, size_db2, percent_intersection)
+
+				
+lists=generate_db_lists (2, 1, 0, "test")
+print make_iblt(lists[0], lists[1], lists[2])
