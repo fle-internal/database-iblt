@@ -163,7 +163,7 @@ class IBLT:
 		f.close()
 		#print dummy_dict
 
-	def unserialize ( self ) :
+	def deserialize ( self ) :
 		"""
 		Retrieve IBLT and its metadata from received json file
 		"""
@@ -177,78 +177,3 @@ class IBLT:
 				raise NameError('Number of hash functions in the second IBLT does not match self\'s IBLT')
 			return json_data["IBLT"]
 
-	"""
-	def serialize( self ):
-		Serialize the IBLT for storage or transfer.
-		Data format:
-			[ Magic bytes ][  Header ][ Data ]
-		    	4 bytes      6 bytes    
-		Magic bytes: 
-			0x49 0x42 0x4C 0x54 (ASCII for IBLT)
-		Header:
-			[ Cell count (m) ]
-			  	32-bit uint
-			[ Key sum length ][ Value sum length ]
-			  	32-bit uint			32-bit uint
-			[ HashKeySum length ][ ValueKeySum length ]
-				32-bit uint				32-bit uint
-			[ # hash funcs (k) ]
-				32-bit uint
-		Data:
-			For each of the m cells:
-				[ 	Count 	 ][ keySum ][ valueSum ][ hashKeySum ][ valueKeySum ]
-				  32-bit int
-		magic = struct.pack( ">I", 0x49424C54 )
-		header = struct.pack( ">IIIIII", self.m, self.key_size, self.value_size, 
-										 self.hash_key_sum_size, 0, self.k )
-		data = ""
-		for cell in self.T:
-			# Count (32-bit signed int)
-			data += struct.pack( ">i", cell[0] )
-			# keySum
-			data += "".join( map( lambda n: struct.pack( ">B", n ), cell[1] ) )
-			# valueSum
-			data += "".join( map( lambda n: struct.pack( ">B", n ), cell[2] ) )
-			# hashKeySum
-			data += "".join( map( lambda n: struct.pack( ">B", n ), cell[3] ) )
-
-		return magic + header + data
-
-	@staticmethod
-	def unserialize( data ):
-		header = struct.unpack( ">IIIIIII", data[:(4*7)] )
-		magic = header[0]
-		if magic != 0x49424C54:
-			raise Exception( "Invalid magic value" )
-
-		m, key_size, value_size, hash_key_sum_size, hash_value_sum_size, k = header[1:7]
-		t = IBLT( m, k, key_size, value_size, hash_key_sum_size )
-
-		expected_data_length = m * ( 4 + key_size + value_size + hash_key_sum_size + hash_value_sum_size )
-		if len( data ) - 28 != expected_data_length:
-			raise Exception( "Invalid data size: Expected %d, was %d" % ( expected_data_length, len( data ) - 28 ) )
-
-		# 4 x 7 bytes offset from magic value and header
-		offset = 28
-		for i in range( m ):
-			t.T[i][0] = struct.unpack( ">i", data[offset:offset+4])[0]
-			offset += 4
-			t.T[i][1] = map( lambda c: struct.unpack( ">B", c )[0], data[offset:offset+key_size] )
-			offset += key_size
-			t.T[i][2] = map( lambda c: struct.unpack( ">B", c )[0], data[offset:offset+value_size] )
-			offset += value_size
-			t.T[i][3] = map( lambda c: struct.unpack( ">B", c )[0], data[offset:offset+hash_key_sum_size] )
-			offset += hash_key_sum_size
-
-		return t
-
-	def get_serialized_size( self ):
-		# Magic bytes
-		result = 4
-		# Header
-		result += 6 * 4
-		# Cells
-		result += self.m * ( 4 + self.key_size + self.value_size + self.hash_key_sum_size )
-		return result
-
-	"""
