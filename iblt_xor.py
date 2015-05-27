@@ -10,9 +10,16 @@ from time import time
 SIZE_KEY = 32
 SIZE_VAL = 40
 
+def fnv_1a ( octet ) :
+	result = 2166136261
+	for num in octet :
+		result ^= num
+		result *= 16777619
+	return result
+
 def format (str, size) :
 	"""
-	Returns formatted string by removing 0x,L from ends and filling 0's if string smaller than size
+	returns formatted string by removing 0x,L from ends and filling 0's if string smaller than size
 	"""
 	return hex(str)[2:-1].zfill(size)
 
@@ -38,6 +45,14 @@ def hex_string_to_ascii (hex_string) :
 	return ''.join(list_char)
 
 
+def deserialize ( file_name ) :
+	"""
+	Retrieve IBLT and its metadata from received json file
+	"""
+	with open(file_name) as json_file:
+    		json_data = json.load(json_file)
+		new_iblt = IBLT(json_data["Metadata"][0], json_data["Metadata"][1], json_data["IBLT"])
+
 class IBLT:
 	# m is amount of cells in underlying lookup tables
 	m = None
@@ -58,9 +73,12 @@ class IBLT:
 			self.T = [[0,0,0,0] for i in range( m )]
 		else :
 			self.T = deepcopy( T )
-		
+	
 	def __int_of_fracStr(self, tup, low, high) :
-		return (int(tup[0][low:high], 16)^int(tup[1][low:high], 16))% self.m
+		octet = []
+		for i in range(1,5):	
+			octet.append(int(tup[0][low:low+i*2], 16)^int(tup[1][low:low+i*2], 16))
+		return fnv_1a(octet)%self.m
 
 	def __hash(self, i, tup) :
 		"""
@@ -82,6 +100,8 @@ class IBLT:
 		"""
 		indices = set( [self.__hash( i, tuple ) for i in range( self.k ) ] )
 		T = self.T
+		#if operation == "insert":
+		#	print indices
 		for index in indices:
 			if operation == "insert" : 
 				# Increase count
@@ -163,17 +183,4 @@ class IBLT:
 		f.close()
 		#print dummy_dict
 
-	def deserialize ( self ) :
-		"""
-		Retrieve IBLT and its metadata from received json file
-		"""
-		students_list = []
-		with open("iblt.json") as json_file:
-    			json_data = json.load(json_file)
-    			#print self.m, self.k, json_data["Metadata"][0], json_data["Metadata"][1]	
-			if self.m != json_data["Metadata"][0] :
-				raise NameError('Size of IBLT does not match self\'s IBLT')
-    			elif self.k != json_data["Metadata"][1] :
-				raise NameError('Number of hash functions in the second IBLT does not match self\'s IBLT')
-			return json_data["IBLT"]
 

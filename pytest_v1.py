@@ -7,7 +7,7 @@ import sys
 from time import time
 from iblt_xor import *
 
-MUL_FACTOR = 2
+MUL_FACTOR = 1.4
 MAX_HASH = 4
 IBLT_FRAC = 0.3
 
@@ -82,7 +82,7 @@ def make_iblt(pairs1, pairs2,intersection):
 
 	#print t1.T
 	#print t2.T
-	print t1.subtract_inplace(t2.T)
+	t1.subtract_inplace(t2.T)
 	end = time()
 	#print t1.serialize()
 	#print t1.unserialize()
@@ -275,6 +275,15 @@ def test():
 				assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, \
 					"size_db1 %d size_db2 %d percent intersection %f" %(size_db1, size_db2, percent_intersection)
 
-				
-lists=generate_db_lists (2, 1, 0, "test")
-print make_iblt(lists[0], lists[1], lists[2])
+# Always fails for (18,10), (28,20), (38,30) etc
+def db2_subsetOf_db1():
+        percentage_intersection = 100
+	size_db1 = 1
+	size_db2 = 1
+	lists=generate_db_lists (size_db1, size_db2, percentage_intersection, "db2subsetdb1")
+	assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, "size_db1 %d size_db2 %d" %(size_db1, size_db2)
+
+
+db2_subsetOf_db1()				
+#lists=generate_db_lists (2, 1, 0, "test")
+#print make_iblt(lists[0], lists[1], lists[2])
