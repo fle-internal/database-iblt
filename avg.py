@@ -1,8 +1,7 @@
 #!/usr/bin/python
-
-f = open('compare.txt','r')
+f = open('full_db_size','r')
 sum = 0
 for i in f:
-        sum += float(i)
-print sum/100
+        sum += int(i)
+print sum
 

@@ -3,6 +3,7 @@ import math
 import cProfile
 import hashlib
 import sys 
+import os
 
 from time import time
 from iblt_xor import *
@@ -79,7 +80,8 @@ def make_iblt(pairs1, pairs2,intersection):
 
 	for tup in pairs2:
         	t2.insert(tup)
-
+	
+	t1.serialize()
 	#print t1.T
 	#print t2.T
 	t1.subtract_inplace(t2.T)
@@ -100,6 +102,7 @@ def full_db(pairs1, pairs2, intersection):
 	dict_b = dict(pairs2)
 	dict_a_minus_b = {}
 	dict_b_minus_a = {}
+	serialize_full_db(dict_a)
 
 	for key in dict_a :
 		if not(dict_b.has_key(key) and dict_b[key] == dict_a[key]):
@@ -115,6 +118,11 @@ def full_db(pairs1, pairs2, intersection):
 	return (entries, deleted_entries)
 
 
+def write_file(data, file_name, mode) :
+	f = open(file_name, mode)
+	f.write(data)
+	f.close()
+
 def verify_iblt_results(db1, db2, intersection) :
 	"""
 	Generating IBLT and comparing the results with full db approach
@@ -129,9 +137,20 @@ def verify_iblt_results(db1, db2, intersection) :
 		results_full_db[0].sort()
 		results_full_db[1].sort()
 		if results_iblt[1] == results_full_db[0] and results_iblt[2] == results_full_db[1]:
+			write_file("\n"+str(os.path.getsize('iblt.json')), 'iblt_size','a')
+			write_file("\n"+str(os.path.getsize('full_db.json')), 'full_db_size','a')
 			return True
 		else :		
 			return False
+
+
+def serialize_full_db( full_db_dict ):
+	"""
+	Create json object for sending the full database
+	"""
+	full_db_dict = json.dumps(full_db_dict)
+	write_file(full_db_dict, 'full_db.json', 'w')
+
 def test_creating_IBLT():
 	"""
 	Creating IBLT and checking if it is empty
