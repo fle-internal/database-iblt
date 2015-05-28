@@ -14,7 +14,8 @@ IBLT_FRAC = 0.3
 
 def make_lists(key, value, seed, limit) :
 	"""
-	Generate list of tuples till the limit	
+	Generate list of tuples till the range(limit) specified
+	passed 'seed' is appended to the tuple to ensure variety in data generation
 	"""
 	return [( md5(seed+key+"%d" % i), sha1(seed+value+"%d" % i)) for i in range(limit)]
 
@@ -81,7 +82,9 @@ def make_iblt(pairs1, pairs2,intersection):
 	for tup in pairs2:
         	t2.insert(tup)
 	
+	#The IBLTs have to be exchanged and hence should be serialized
 	t1.serialize()
+	t2.serialize()
 	#print t1.T
 	#print t2.T
 	t1.subtract_inplace(t2.T)
@@ -91,7 +94,6 @@ def make_iblt(pairs1, pairs2,intersection):
 	return t1.list_entries()
 
 def full_db(pairs1, pairs2, intersection):
-
 	"""
 	Calculates database difference by sending full database instead of IBLT
 	Assuming that the dbs given to us are not in the form of dictionaries, we create 2 dictionaries
@@ -102,7 +104,10 @@ def full_db(pairs1, pairs2, intersection):
 	dict_b = dict(pairs2)
 	dict_a_minus_b = {}
 	dict_b_minus_a = {}
+
+	#Serialize both the dictionaries for sending
 	serialize_full_db(dict_a)
+	serialize_full_db(dict_b)
 
 	for key in dict_a :
 		if not(dict_b.has_key(key) and dict_b[key] == dict_a[key]):
@@ -119,6 +124,10 @@ def full_db(pairs1, pairs2, intersection):
 
 
 def write_file(data, file_name, mode) :
+	"""
+	Helper function which writes passed data in the file_name mentioned 
+	according to the argument-mode
+	"""
 	f = open(file_name, mode)
 	f.write(data)
 	f.close()
@@ -294,15 +303,3 @@ def test():
 				assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, \
 					"size_db1 %d size_db2 %d percent intersection %f" %(size_db1, size_db2, percent_intersection)
 
-# Always fails for (18,10), (28,20), (38,30) etc
-def db2_subsetOf_db1():
-        percentage_intersection = 100
-	size_db1 = 1
-	size_db2 = 1
-	lists=generate_db_lists (size_db1, size_db2, percentage_intersection, "db2subsetdb1")
-	assert verify_iblt_results(lists[0], lists[1], lists[2]) == True, "size_db1 %d size_db2 %d" %(size_db1, size_db2)
-
-
-db2_subsetOf_db1()				
-#lists=generate_db_lists (2, 1, 0, "test")
-#print make_iblt(lists[0], lists[1], lists[2])

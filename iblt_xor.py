@@ -10,16 +10,9 @@ from time import time
 SIZE_KEY = 32
 SIZE_VAL = 40
 
-def fnv_1a ( octet ) :
-	result = 2166136261
-	for num in octet :
-		result ^= num
-		result *= 16777619
-	return result
-
 def format (str, size) :
 	"""
-	returns formatted string by removing 0x,L from ends and filling 0's if string smaller than size
+	Returns formatted string by removing 0x,L from ends and filling 0's if string smaller than size
 	"""
 	return hex(str)[2:-1].zfill(size)
 
@@ -67,6 +60,9 @@ class IBLT:
 	RESULT_LIST_ENTRIES_INCOMPLETE = "incomplete"
 
 	def __init__( self, m, k,T=None):
+		"""
+		Initialization
+		"""
 		self.m = m	
 		self.k = k
 		if T == None:	
@@ -74,29 +70,30 @@ class IBLT:
 		else :
 			self.T = deepcopy( T )
 	
-	def __int_of_fracStr(self, tup, low, high) :
-		octet = []
-		for i in range(1,5):	
-			octet.append(int(tup[0][low:low+i*2], 16)^int(tup[1][low:low+i*2], 16))
-		return fnv_1a(octet)%self.m
-
+	def __hashedIndex(self, tup, low, high) :
+		"""
+		Helper function for hash()
+		"""
+		return (int(tup[0][low:high], 16)^int(tup[1][low:high], 16))%self.m
+		
 	def __hash(self, i, tup) :
 		"""
 		hash( i, tuple) where i is index of hash function, tuple is key-value pair to be hashed
 		Assuming there are no more than 4 hash functions, according to the paper
 		"""
 		if i == 0 :
-			return self.__int_of_fracStr(tup, 0, 8)
+			return self.__hashedIndex(tup, 0, 8)
 		elif i == 1 :
-			return self.__int_of_fracStr(tup, 8, 16)
+			return self.__hashedIndex(tup, 8, 16)
 		elif i == 2 :
-			return self.__int_of_fracStr(tup, 16, 24)
+			return self.__hashedIndex(tup, 16, 24)
 		else :
-			return self.__int_of_fracStr(tup, 24, 32)
+			return self.__hashedIndex(tup, 24, 32)
 
 	def _xor_tuple(self, tuple, operation):
 		"""
 		helper function for insert and delete functions	
+		Inserts/Deletes given tuple into the IBLT 
 		"""
 		indices = set( [self.__hash( i, tuple ) for i in range( self.k ) ] )
 		T = self.T
@@ -115,17 +112,22 @@ class IBLT:
 		
 	def insert( self, tuple ):
 		"""
-		Insert the tuple into IBLT	
+		Insert the given tuple into IBLT	
 		"""
 		self._xor_tuple(tuple, "insert")
 
 	def delete( self, tuple ):
 		"""
-		Delete the tuple from IBLT	
+		Delete the given tuple from IBLT	
 		"""
 		self._xor_tuple(tuple, "delete")
 
 	def subtract_inplace (self, other_iblt):
+		"""
+		Subtracts the passed IBLT from own IBLT. 
+		XOR all the entries and subtract the count field.
+		Returns the IBLT after subtraction
+		"""
 		for i in range(0, len(self.T)):
 			self.T[i][0] = self.T[i][0] - other_iblt[i][0]
 			self.T[i][1] = self.T[i][1] ^ other_iblt[i][1]	
@@ -165,14 +167,13 @@ class IBLT:
 
 	def is_empty( self ):
 		"""
-		Returns true if the table is completely empty, i.e. no contains no entries,
-		inserted or deleted
+		Returns true if the table is completely empty, i.e.contains no entries,
 		"""
 		return all( map( lambda e: e[0] == 0 and e[1]== 0, self.T ) )
 
 	def serialize( self ):
 		"""
-		Create json object for sending, include the magic bytes and the name of the json file?	
+		Create json object (write to iblt.json) for sending own IBLT
 		"""
 		dummy_dict = {}	
 		dummy_dict["Metadata"] = [self.m, self.k]
