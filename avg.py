@@ -1,8 +1,7 @@
+import sys 
 #!/usr/bin/python
-
-f = open('compare.txt','r')
+f = open(str(sys.argv[1]),'r')
 sum = 0
 for i in f:
-        sum += float(i)
-print sum/100
-
+        sum += int(i)
+print sum
